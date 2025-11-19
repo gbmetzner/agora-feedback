@@ -1,0 +1,16 @@
+quarkus:
+  datasource:
+    db-kind: postgresql
+    username: postgres
+    password: agora
+    jdbc:
+      url: jdbc:postgresql://localhost:5432/agora_feedback
+    devservices:
+      image-name: postgres:16.2-alpine
+      show-logs: true
+  flyway:
+    migrate-at-start: true
+    clean-at-start: true
+    jdbc-url: ${quarkus.datasource.jdbc.url}
+    username: ${quarkus.datasource.username}
+    password: ${quarkus.datasource.password}

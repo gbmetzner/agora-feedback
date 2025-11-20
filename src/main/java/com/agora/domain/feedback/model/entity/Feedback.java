@@ -1,17 +1,22 @@
 package com.agora.domain.feedback.model.entity;
 
+import com.agora.domain.feedback.common.IdGenerator;
 import com.agora.domain.user.model.User;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+@Getter
 @Entity
 @Table(name = "feedback")
+@Setter
 public class Feedback extends PanacheEntityBase {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "Feedback title cannot be blank")
@@ -50,94 +55,17 @@ public class Feedback extends PanacheEntityBase {
     public Feedback() {
     }
 
-    public Feedback(String title, String description, FeedbackStatus status) {
+    public Feedback(String title, String description) {
         this.title = title;
         this.description = description;
-        this.status = status;
         this.createdAt = OffsetDateTime.now();
         this.archived = false;
+        this.status = FeedbackStatus.PENDING;
     }
 
-    // Getters
-    public Long getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public FeedbackStatus getStatus() {
-        return status;
-    }
-
-    public FeedbackCategory getCategory() {
-        return category;
-    }
-
-    public User getAuthor() {
-        return author;
-    }
-
-    public String getSentiment() {
-        return sentiment;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public boolean isArchived() {
-        return archived;
-    }
-
-    // Setters
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setStatus(FeedbackStatus status) {
-        this.status = status;
-    }
-
-    public void setCategory(FeedbackCategory category) {
-        this.category = category;
-    }
-
-    public void setAuthor(User author) {
-        this.author = author;
-    }
-
-    public void setSentiment(String sentiment) {
-        this.sentiment = sentiment;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
-    }
-
-    public void setCreatedAt(OffsetDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setArchived(boolean archived) {
-        this.archived = archived;
+    @PrePersist
+    public void prePersist() {
+        this.id = IdGenerator.generateId();
     }
 
     // Domain methods
@@ -146,8 +74,8 @@ public class Feedback extends PanacheEntityBase {
     }
 
     public void reopen() {
-        if (this.status == FeedbackStatus.CLOSED) {
-            this.status = FeedbackStatus.OPENED;
+        if (this.status == FeedbackStatus.COMPLETED) {
+            this.status = FeedbackStatus.PENDING;
         }
     }
 

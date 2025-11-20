@@ -12,6 +12,7 @@ import com.agora.domain.feedback.model.repository.FeedbackRepository;
 import com.agora.domain.user.exception.UserNotFoundException;
 import com.agora.domain.user.model.User;
 import com.agora.domain.user.model.repository.UserRepository;
+import io.hypersistence.tsid.TSID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -39,8 +40,7 @@ public class FeedbackApplicationService {
     public FeedbackResponse createFeedback(@Valid @NotNull CreateFeedbackCommand command) {
         Feedback feedback = new Feedback(
                 command.title(),
-                command.description(),
-                command.status()
+                command.description()
         );
 
         if (command.categoryId() != null) {
@@ -159,7 +159,7 @@ public class FeedbackApplicationService {
 
     private FeedbackResponse toResponse(Feedback feedback) {
         return new FeedbackResponse(
-                feedback.getId(),
+                TSID.from(feedback.getId()).toString(),
                 feedback.getTitle(),
                 feedback.getDescription(),
                 feedback.getStatus(),

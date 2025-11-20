@@ -1,5 +1,6 @@
 package com.agora.domain.feedback.resource;
 
+import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +34,7 @@ class FeedbackResourceTest {
         String requestBody = """
                 {
                     "title": "Test Feedback",
-                    "description": "This is a test feedback content",
-                    "status": "OPENED"
+                    "description": "This is a test feedback content"
                 }
                 """;
 
@@ -46,8 +46,7 @@ class FeedbackResourceTest {
                 .statusCode(201)
                 .body("title", is("Test Feedback"))
                 .body("description", is("This is a test feedback content"))
-                .body("status", is("OPENED"))
-                .body("id", greaterThan(0))
+                .body("status", is(FeedbackStatus.PENDING.name()))
                 .body("createdAt", notNullValue())
                 .body("archived", is(false));
     }
@@ -154,12 +153,11 @@ class FeedbackResourceTest {
         String createBody = """
                 {
                     "title": "To Delete",
-                    "description": "This feedback will be deleted soon",
-                    "status": "OPENED"
+                    "description": "This feedback will be deleted soon"
                 }
                 """;
 
-        Integer feedbackId = given()
+        String feedbackId = given()
                 .contentType("application/json")
                 .body(createBody)
                 .when().post("/api/feedbacks")

@@ -3,6 +3,7 @@ package com.agora.domain.feedback.resource;
 import com.agora.domain.feedback.application.FeedbackApplicationService;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
+import com.agora.domain.feedback.common.IdGenerator;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -72,8 +73,8 @@ public class FeedbackResource {
     })
     public Response getById(
             @Parameter(description = "Feedback ID", required = true)
-            @PathParam("id") Long id) {
-        FeedbackResponse response = feedbackApplicationService.getFeedback(id);
+            @PathParam("id") String id) {
+        FeedbackResponse response = feedbackApplicationService.getFeedback(IdGenerator.toLong(id));
         return Response.ok(response).build();
     }
 
@@ -174,8 +175,8 @@ public class FeedbackResource {
     })
     public Response delete(
             @Parameter(description = "Feedback ID", required = true)
-            @PathParam("id") Long id) {
-        feedbackApplicationService.deleteFeedback(id);
+            @PathParam("id") String id) {
+        feedbackApplicationService.deleteFeedback(IdGenerator.toLong(id));
         return Response.noContent().build();
     }
 

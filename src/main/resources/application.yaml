@@ -14,3 +14,10 @@ quarkus:
     jdbc-url: ${quarkus.datasource.jdbc.url}
     username: ${quarkus.datasource.username}
     password: ${quarkus.datasource.password}
+
+agora:
+  feedback:
+    id-generation:
+      node-id: 1
+      worker-id: 1
+      epoch: 2025-01-01T00:00:00.000Z

@@ -1,6 +1,5 @@
 package com.agora.domain.feedback.model.entity;
 
 public enum FeedbackStatus {
-    OPENED,
-    CLOSED
+    PENDING, ACKNOWLEDGED, IN_PROGRESS, COMPLETED
 }

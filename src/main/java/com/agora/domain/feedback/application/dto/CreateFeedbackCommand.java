@@ -14,9 +14,6 @@ public record CreateFeedbackCommand(
         @Size(min = 10, max = 5000, message = "Description must be between 10 and 5000 characters")
         String description,
 
-        @NotNull(message = "Status is required")
-        FeedbackStatus status,
-
         Long categoryId,
 
         Long authorId,

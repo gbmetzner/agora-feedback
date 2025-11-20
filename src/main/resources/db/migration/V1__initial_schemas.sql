@@ -9,10 +9,10 @@ create table category (
 );
 
 create table feedback (
-    id bigint generated always as identity primary key,
+    id bigint primary key,
     title varchar(255) not null,
     description text not null,
-    status varchar(25) not null check (status in ('OPENED', 'CLOSED')),
+    status varchar(25) not null check (status in ('PENDING', 'ACKNOWLEDGED', 'IN_PROGRESS', 'COMPLETED')),
     author_id bigint references "user"(id) on delete set null,
     category_id bigint references category(id) on delete set null,
     sentiment varchar(50),

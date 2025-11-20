@@ -7,7 +7,7 @@ import java.time.OffsetDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FeedbackResponse(
-        Long id,
+        String id,
         String title,
         String description,
         FeedbackStatus status,

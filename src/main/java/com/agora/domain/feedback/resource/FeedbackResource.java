@@ -8,12 +8,20 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.List;
 
 @Path("/api/feedbacks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
 public class FeedbackResource {
     private final FeedbackApplicationService feedbackApplicationService;
 
@@ -23,6 +31,20 @@ public class FeedbackResource {
     }
 
     @GET
+    @Operation(
+            summary = "List all feedback items",
+            description = "Retrieve all feedback submissions. Note: This endpoint currently does not support pagination or filtering as specified in the OpenAPI spec."
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "List of feedback items",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            )
+    })
     public Response listAll() {
         List<FeedbackResponse> responses = feedbackApplicationService.getAllFeedbacks();
         return Response.ok(responses).build();
@@ -30,41 +52,183 @@ public class FeedbackResource {
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") Long id) {
+    @Operation(
+            summary = "Get feedback by ID",
+            description = "Retrieve a specific feedback item by its ID"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Feedback details",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response getById(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") Long id) {
         FeedbackResponse response = feedbackApplicationService.getFeedback(id);
         return Response.ok(response).build();
     }
 
     @POST
-    public Response create(CreateFeedbackCommand command) {
+    @Operation(
+            summary = "Submit new feedback",
+            description = "Create a new feedback item. Note: The OpenAPI spec uses PATCH for updates, but this implementation uses PUT."
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "201",
+                    description = "Feedback created successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Invalid request - validation errors"
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Not authenticated"
+            )
+    })
+    public Response create(
+            @Parameter(description = "Feedback creation data", required = true)
+            CreateFeedbackCommand command) {
         FeedbackResponse response = feedbackApplicationService.createFeedback(command);
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
     @PUT
     @Path("/{id}")
-    public Response update(@PathParam("id") Long id, UpdateFeedbackCommand command) {
+    @Operation(
+            summary = "Update feedback",
+            description = "Update an existing feedback item (author or admin only). Note: OpenAPI spec specifies PATCH, but this uses PUT."
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Feedback updated successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Invalid request - validation errors"
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Not authenticated"
+            ),
+            @APIResponse(
+                    responseCode = "403",
+                    description = "Insufficient permissions"
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response update(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") Long id,
+            @Parameter(description = "Updated feedback data", required = true)
+            UpdateFeedbackCommand command) {
         FeedbackResponse response = feedbackApplicationService.updateFeedback(id, command);
         return Response.ok(response).build();
     }
 
     @DELETE
     @Path("/{id}")
-    public Response delete(@PathParam("id") Long id) {
+    @Operation(
+            summary = "Delete feedback",
+            description = "Delete a feedback item (author or admin only)"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "204",
+                    description = "Feedback deleted successfully"
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Not authenticated"
+            ),
+            @APIResponse(
+                    responseCode = "403",
+                    description = "Insufficient permissions"
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response delete(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") Long id) {
         feedbackApplicationService.deleteFeedback(id);
         return Response.noContent().build();
     }
 
     @POST
     @Path("/{id}/archive")
-    public Response archive(@PathParam("id") Long id) {
+    @Operation(
+            summary = "Archive feedback",
+            description = "Mark a feedback item as archived. Note: This endpoint is not part of the official OpenAPI specification."
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Feedback archived successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response archive(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") Long id) {
         FeedbackResponse response = feedbackApplicationService.archiveFeedback(id);
         return Response.ok(response).build();
     }
 
     @POST
     @Path("/{id}/reopen")
-    public Response reopen(@PathParam("id") Long id) {
+    @Operation(
+            summary = "Reopen feedback",
+            description = "Reopen a closed feedback item. Note: This endpoint is not part of the official OpenAPI specification."
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Feedback reopened successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response reopen(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") Long id) {
         FeedbackResponse response = feedbackApplicationService.reopenFeedback(id);
         return Response.ok(response).build();
     }

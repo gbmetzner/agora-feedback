@@ -2,17 +2,22 @@ package com.agora.domain.feedback.application;
 
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
+import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.CategoryNotFoundException;
 import com.agora.domain.feedback.exception.FeedbackNotFoundException;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
+import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import com.agora.domain.feedback.model.entity.Feedback;
 import com.agora.domain.feedback.model.entity.FeedbackCategory;
+import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import com.agora.domain.feedback.model.repository.CategoryRepository;
 import com.agora.domain.feedback.model.repository.FeedbackRepository;
 import com.agora.domain.user.exception.UserNotFoundException;
 import com.agora.domain.user.model.User;
 import com.agora.domain.user.model.repository.UserRepository;
 import io.hypersistence.tsid.TSID;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -119,6 +124,31 @@ public class FeedbackApplicationService {
     }
 
     @Transactional
+    public PaginatedFeedbackResponse getAllFeedbacksPaginated(int pageNumber, int pageSize, String sortOrder) {
+        // Validate inputs
+        int page = Math.max(1, pageNumber);
+        int size = Math.max(1, Math.min(pageSize, 100)); // Max 100 items per page
+
+        // Determine sort direction based on sortOrder parameter
+        Sort.Direction direction = "oldest".equalsIgnoreCase(sortOrder)
+                ? Sort.Direction.Ascending
+                : Sort.Direction.Descending;
+
+        Sort sort = Sort.by("createdAt", direction);
+
+        // Get paginated results
+        var pageResult = feedbackRepository.findAll(sort).page(Page.of(page - 1, size)).list();
+        long totalItems = feedbackRepository.count();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+
+        List<FeedbackResponse> items = pageResult.stream()
+                .map(this::toResponse)
+                .toList();
+
+        return new PaginatedFeedbackResponse(items, page, size, totalItems, totalPages);
+    }
+
+    @Transactional
     public List<FeedbackResponse> getAllFeedbacks() {
         return feedbackRepository.findAll()
                 .stream()
@@ -158,18 +188,13 @@ public class FeedbackApplicationService {
     }
 
     private FeedbackResponse toResponse(Feedback feedback) {
-        return new FeedbackResponse(
-                TSID.from(feedback.getId()).toString(),
+        return new FeedbackResponse(IdHelper.toString(feedback.getId()),
                 feedback.getTitle(),
-                feedback.getDescription(),
-                feedback.getStatus(),
-                feedback.getCategory() != null ? feedback.getCategory().getId() : null,
-                feedback.getCategory() != null ? feedback.getCategory().getName() : null,
-                feedback.getAuthor() != null ? feedback.getAuthor().getId() : null,
-                feedback.getAuthor() != null ? feedback.getAuthor().getName() : null,
                 feedback.getSentiment(),
-                feedback.getTags(),
-                feedback.getCreatedAt(),
+                feedback.getUpvotes(),
+                feedback.getComments(),
+                feedback.getStatus(),
+                feedback.getCategory().getName(),
                 feedback.isArchived()
         );
     }

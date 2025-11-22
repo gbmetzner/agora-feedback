@@ -3,8 +3,9 @@ package com.agora.domain.feedback.resource;
 import com.agora.domain.feedback.application.FeedbackApplicationService;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
-import com.agora.domain.feedback.common.IdGenerator;
+import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
+import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -16,14 +17,17 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
-import java.util.List;
-
-@Path("/api/feedbacks")
+@Path("/api/feedback")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
 public class FeedbackResource {
+
+
+    private static final Logger LOGGER = Logger.getLogger(FeedbackResource.class);
+
     private final FeedbackApplicationService feedbackApplicationService;
 
     @Inject
@@ -33,22 +37,34 @@ public class FeedbackResource {
 
     @GET
     @Operation(
-            summary = "List all feedback items",
-            description = "Retrieve all feedback submissions. Note: This endpoint currently does not support pagination or filtering as specified in the OpenAPI spec."
+            summary = "List all feedback items with pagination and sorting",
+            description = "Retrieve feedback submissions with support for pagination and sorting by creation date"
     )
     @APIResponses({
             @APIResponse(
                     responseCode = "200",
-                    description = "List of feedback items",
+                    description = "Paginated list of feedback items",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = FeedbackResponse.class)
+                            schema = @Schema(implementation = PaginatedFeedbackResponse.class)
                     )
             )
     })
-    public Response listAll() {
-        List<FeedbackResponse> responses = feedbackApplicationService.getAllFeedbacks();
-        return Response.ok(responses).build();
+    public Response listAll(
+            @Parameter(description = "Page number (1-indexed, default 1)", example = "1")
+            @QueryParam("page") Integer page,
+            @Parameter(description = "Page size (default 10, max 100)", example = "10")
+            @QueryParam("pageSize") Integer size,
+            @Parameter(description = "Sort order: 'newest' (default) or 'oldest'", example = "newest")
+            @QueryParam("sortBy") String sort) {
+        LOGGER.info("Listing feedback items with pagination and sorting");
+
+        int pageNum = page != null ? page : 1;
+        int pageSize = size != null ? size : 10;
+        String sortOrder = sort != null ? sort : "newest";
+
+        PaginatedFeedbackResponse response = feedbackApplicationService.getAllFeedbacksPaginated(pageNum, pageSize, sortOrder);
+        return Response.ok(response).build();
     }
 
     @GET
@@ -74,7 +90,7 @@ public class FeedbackResource {
     public Response getById(
             @Parameter(description = "Feedback ID", required = true)
             @PathParam("id") String id) {
-        FeedbackResponse response = feedbackApplicationService.getFeedback(IdGenerator.toLong(id));
+        FeedbackResponse response = feedbackApplicationService.getFeedback(IdHelper.toLong(id));
         return Response.ok(response).build();
     }
 
@@ -176,7 +192,7 @@ public class FeedbackResource {
     public Response delete(
             @Parameter(description = "Feedback ID", required = true)
             @PathParam("id") String id) {
-        feedbackApplicationService.deleteFeedback(IdGenerator.toLong(id));
+        feedbackApplicationService.deleteFeedback(IdHelper.toLong(id));
         return Response.noContent().build();
     }
 

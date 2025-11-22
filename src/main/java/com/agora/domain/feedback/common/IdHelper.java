@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 @UtilityClass
-public class IdGenerator {
+public class IdHelper {
 
     private static final TSID.Factory factory;
 

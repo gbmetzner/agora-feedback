@@ -1,10 +1,10 @@
 create table "user" (
-    id bigint generated always as identity primary key,
+    id bigint primary key,
     name varchar(255) not null
 );
 
 create table category (
-    id bigint generated always as identity primary key,
+    id bigint primary key,
     name varchar(255) not null unique
 );
 
@@ -16,6 +16,9 @@ create table feedback (
     author_id bigint references "user"(id) on delete set null,
     category_id bigint references category(id) on delete set null,
     sentiment varchar(50),
+    upvotes int not null default 0,
+    downvotes int not null default 0,
+    comments int not null default 0,
     tags varchar(500),
     created_at timestamp with time zone not null,
     archived boolean not null default false

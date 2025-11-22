@@ -15,6 +15,18 @@ quarkus:
     username: ${quarkus.datasource.username}
     password: ${quarkus.datasource.password}
 
+'%dev':
+  quarkus:
+    http:
+      cors:
+        enabled: true
+        methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+        headers: Authorization, Content-Type
+        exposed-headers: Authorization, Content-Type
+        origins: ["http://localhost:8081","http://localhost:8082"]
+        access-control-max-age: 86400
+
+
 agora:
   feedback:
     id-generation:

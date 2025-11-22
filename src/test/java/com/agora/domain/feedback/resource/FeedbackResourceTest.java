@@ -1,5 +1,9 @@
 package com.agora.domain.feedback.resource;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
+import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -31,24 +35,21 @@ class FeedbackResourceTest {
 
     @Test
     void testCreateFeedback() {
-        String requestBody = """
-                {
-                    "title": "Test Feedback",
-                    "description": "This is a test feedback content"
-                }
-                """;
+        var requestBody = new CreateFeedbackCommand("Test Feedback", "This is a test feedback content",117457749108987393L,117457749108987388L, "", "" );
 
-        given()
+        var response = given()
                 .contentType("application/json")
                 .body(requestBody)
                 .when().post("/api/feedbacks")
                 .then()
                 .statusCode(201)
-                .body("title", is("Test Feedback"))
-                .body("description", is("This is a test feedback content"))
-                .body("status", is(FeedbackStatus.PENDING.name()))
-                .body("createdAt", notNullValue())
-                .body("archived", is(false));
+                .extract().body().as(FeedbackResponse.class);
+        assertThat("title should match request", response.title(), is(requestBody.title()));
+        assertThat("status should be PENDING", response.status(), is(FeedbackStatus.PENDING));
+        assertThat("categoryName should not be null", response.categoryName(), notNullValue());
+        assertThat("upvotes should be zero", response.upvotes(), is(0));
+        assertThat("comments should be zero", response.comments(), is(0));
+        assertThat("archived should be false", response.archived(), is(false));
     }
 
     @Test

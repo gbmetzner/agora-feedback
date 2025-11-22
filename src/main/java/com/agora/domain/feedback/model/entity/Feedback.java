@@ -1,6 +1,6 @@
 package com.agora.domain.feedback.model.entity;
 
-import com.agora.domain.feedback.common.IdGenerator;
+import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.user.model.User;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
@@ -42,6 +42,10 @@ public class Feedback extends PanacheEntityBase {
     @Size(max = 50, message = "Sentiment must not exceed 50 characters")
     private String sentiment;
 
+    private int upvotes;
+    private int downvotes;
+    private int comments;
+
     @Size(max = 500, message = "Tags must not exceed 500 characters")
     private String tags;
 
@@ -58,14 +62,14 @@ public class Feedback extends PanacheEntityBase {
     public Feedback(String title, String description) {
         this.title = title;
         this.description = description;
-        this.createdAt = OffsetDateTime.now();
-        this.archived = false;
-        this.status = FeedbackStatus.PENDING;
     }
 
     @PrePersist
     public void prePersist() {
-        this.id = IdGenerator.generateId();
+        this.id = IdHelper.generateId();
+        this.createdAt = OffsetDateTime.now();
+        this.archived = false;
+        this.status = FeedbackStatus.PENDING;
     }
 
     // Domain methods

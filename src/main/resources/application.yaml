@@ -33,3 +33,25 @@ agora:
       node-id: 1
       worker-id: 1
       epoch: 2025-01-01T00:00:00.000Z
+
+discord:
+  oauth:
+    client-id: 1442683898411618306
+    client-secret: 78162399fda3b978fadfd53b352fd9fdbc9002cf125c337e937c9150b8ff4fa5
+    redirect-uri: http://localhost:8081/api/auth/discord/callback
+    auth-uri: https://discord.com/api/oauth2/authorize
+    token-uri: https://discord.com/api/oauth2/token
+    user-info-uri: https://discord.com/api/users/@me
+    scopes: identify email
+
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: META-INF/resources/jwt-public-key.pem
+      issuer: agora.feedback
+smallrye:
+  jwt:
+    sign:
+      key:
+        location: META-INF/resources/jwt-private-key.pem

@@ -5,12 +5,17 @@ import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
 import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.CategoryNotFoundException;
 import com.agora.domain.feedback.exception.FeedbackNotFoundException;
+import com.agora.domain.feedback.model.dto.CommentAuthorResponse;
+import com.agora.domain.feedback.model.dto.CommentResponse;
+import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
+import com.agora.domain.feedback.model.entity.Comment;
 import com.agora.domain.feedback.model.entity.Feedback;
 import com.agora.domain.feedback.model.entity.FeedbackCategory;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import com.agora.domain.feedback.model.repository.CategoryRepository;
+import com.agora.domain.feedback.model.repository.CommentRepository;
 import com.agora.domain.feedback.model.repository.FeedbackRepository;
 import com.agora.domain.user.exception.UserNotFoundException;
 import com.agora.domain.user.model.User;
@@ -31,14 +36,17 @@ public class FeedbackApplicationService {
     private final FeedbackRepository feedbackRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     @Inject
     public FeedbackApplicationService(FeedbackRepository feedbackRepository,
                                        CategoryRepository categoryRepository,
-                                       UserRepository userRepository) {
+                                       UserRepository userRepository,
+                                       CommentRepository commentRepository) {
         this.feedbackRepository = feedbackRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
     }
 
     @Transactional
@@ -187,15 +195,69 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    @Transactional
+    public CommentResponse addComment(@NotNull Long feedbackId, @Valid @NotNull CreateCommentRequest request) {
+        Feedback feedback = feedbackRepository.findById(feedbackId);
+        if (feedback == null) {
+            throw new FeedbackNotFoundException(feedbackId);
+        }
+
+        User author = userRepository.findById(117457749108987389L); //request.authorId()
+        if (author == null) {
+            throw new UserNotFoundException(1L);
+        }
+
+        Comment comment = new Comment(request.text(), feedback, author);
+        commentRepository.persist(comment);
+
+        feedback.setComments(feedback.getComments() + 1);
+        feedbackRepository.persist(feedback);
+
+        return toCommentResponse(comment);
+    }
+
     private FeedbackResponse toResponse(Feedback feedback) {
         return new FeedbackResponse(IdHelper.toString(feedback.getId()),
                 feedback.getTitle(),
+                feedback.getDescription(),
                 feedback.getSentiment(),
                 feedback.getUpvotes(),
                 feedback.getComments(),
                 feedback.getStatus(),
                 feedback.getCategory().getName(),
+                feedback.getAuthor().getName(),
+                feedback.getCreatedAt(),
                 feedback.isArchived()
+        );
+    }
+
+    @Transactional
+    public List<CommentResponse> getCommentsByFeedbackId(@NotNull Long feedbackId) {
+        Feedback feedback = feedbackRepository.findById(feedbackId);
+        if (feedback == null) {
+            throw new FeedbackNotFoundException(feedbackId);
+        }
+
+        return commentRepository.findByFeedbackId(feedbackId)
+                .stream()
+                .map(this::toCommentResponse)
+                .toList();
+    }
+
+    private CommentResponse toCommentResponse(Comment comment) {
+        CommentAuthorResponse author = new CommentAuthorResponse(
+                IdHelper.toString(comment.getAuthor().getId()),
+                comment.getAuthor().getName()
+        );
+
+        return new CommentResponse(
+                IdHelper.toString(comment.getId()),
+                author,
+                comment.getText(),
+                comment.isDeveloperResponse(),
+                comment.getUpvotes(),
+                comment.getCreatedAt(),
+                comment.getUpdatedAt()
         );
     }
 }

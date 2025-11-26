@@ -4,6 +4,8 @@ import com.agora.domain.feedback.application.FeedbackApplicationService;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
 import com.agora.domain.feedback.common.IdHelper;
+import com.agora.domain.feedback.model.dto.CommentResponse;
+import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import jakarta.inject.Inject;
@@ -19,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
-@Path("/api/feedback")
+@Path("/v1/api/feedback")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
@@ -249,4 +251,67 @@ public class FeedbackResource {
         FeedbackResponse response = feedbackApplicationService.reopenFeedback(id);
         return Response.ok(response).build();
     }
+
+    @GET
+    @Path("/{id}/comments")
+    @Operation(
+            summary = "Get comments for feedback",
+            description = "Retrieve all comments for a specific feedback item"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "List of comments retrieved successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = CommentResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response getComments(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") String id) {
+        var comments = feedbackApplicationService.getCommentsByFeedbackId(IdHelper.toLong(id));
+        return Response.ok(comments).build();
+    }
+
+    @PUT
+    @Path("/{id}/comments")
+    @Operation(
+            summary = "Add comment to feedback",
+            description = "Add a new comment to an existing feedback item"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "201",
+                    description = "Comment created successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = CommentResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Invalid request - validation errors"
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    public Response addComment(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") String id,
+            @Parameter(description = "Comment data", required = true)
+            CreateCommentRequest request) {
+        CommentResponse response = feedbackApplicationService.addComment(IdHelper.toLong(id), request);
+        return Response.status(Response.Status.CREATED).entity(response).build();
+    }
+
+
+
 }

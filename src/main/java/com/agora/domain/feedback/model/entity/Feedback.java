@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.time.OffsetDateTime;
 
@@ -29,6 +31,7 @@ public class Feedback extends PanacheEntityBase {
 
     @NotNull(message = "Feedback status cannot be null")
     @Enumerated(EnumType.STRING)
+    @JdbcType(value = PostgreSQLEnumJdbcType.class)
     private FeedbackStatus status;
 
     @ManyToOne
@@ -52,6 +55,9 @@ public class Feedback extends PanacheEntityBase {
     @NotNull(message = "Created timestamp cannot be null")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+    @NotNull(message = "Updated timestamp cannot be null")
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 
     @NotNull(message = "Archived flag cannot be null")
     private boolean archived;
@@ -68,8 +74,14 @@ public class Feedback extends PanacheEntityBase {
     public void prePersist() {
         this.id = IdHelper.generateId();
         this.createdAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
         this.archived = false;
         this.status = FeedbackStatus.PENDING;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = OffsetDateTime.now();
     }
 
     // Domain methods

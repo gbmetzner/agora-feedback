@@ -6,4 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class UserRepository implements PanacheRepository<User> {
+    public User findByDiscordId(String discordId) {
+        return find("discordId", discordId).firstResult();
+    }
 }

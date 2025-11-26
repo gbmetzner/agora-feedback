@@ -9,11 +9,14 @@ import java.time.OffsetDateTime;
 public record FeedbackResponse(
         String id,
         String title,
+        String description,
         String sentiment,
         int upvotes,
         int comments,
         FeedbackStatus status,
         String categoryName,
+        String authorName,
+        OffsetDateTime createdAt,
         Boolean archived
 ) {
 }

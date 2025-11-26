@@ -15,11 +15,13 @@ import static org.hamcrest.Matchers.greaterThan;
 
 @QuarkusTest
 class FeedbackResourceTest {
+    
+    private static final String FEEDBACK_URL = "/v1/api/feedback";
 
     @Test
     void testListAllFeedbacks() {
         given()
-                .when().get("/api/feedbacks")
+                .when().get(FEEDBACK_URL)
                 .then()
                 .statusCode(200);
     }
@@ -27,7 +29,7 @@ class FeedbackResourceTest {
     @Test
     void testGetNonExistentFeedback() {
         given()
-                .when().get("/api/feedbacks/99999")
+                .when().get(FEEDBACK_URL + "/99999")
                 .then()
                 .statusCode(404)
                 .body("message", is("Feedback with id 99999 not found"));
@@ -40,7 +42,7 @@ class FeedbackResourceTest {
         var response = given()
                 .contentType("application/json")
                 .body(requestBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -65,7 +67,7 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(requestBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(400)
                 .body("message", is("Validation failed"))
@@ -85,7 +87,7 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(requestBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(400);
     }
@@ -103,7 +105,7 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(requestBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(400);
     }
@@ -122,7 +124,7 @@ class FeedbackResourceTest {
         Integer feedbackId = given()
                 .contentType("application/json")
                 .body(createBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
                 .extract()
@@ -140,7 +142,7 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(updateBody)
-                .when().put("/api/feedbacks/" + feedbackId)
+                .when().put(FEEDBACK_URL +"/" + feedbackId)
                 .then()
                 .statusCode(200)
                 .body("title", is("Updated Title"))
@@ -161,7 +163,7 @@ class FeedbackResourceTest {
         String feedbackId = given()
                 .contentType("application/json")
                 .body(createBody)
-                .when().post("/api/feedbacks")
+                .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
                 .extract()
@@ -169,13 +171,13 @@ class FeedbackResourceTest {
 
         // Delete it
         given()
-                .when().delete("/api/feedbacks/" + feedbackId)
+                .when().delete(FEEDBACK_URL +"/" + feedbackId)
                 .then()
                 .statusCode(204);
 
         // Verify it's deleted
         given()
-                .when().get("/api/feedbacks/" + feedbackId)
+                .when().get(FEEDBACK_URL +"/" + feedbackId)
                 .then()
                 .statusCode(404);
     }

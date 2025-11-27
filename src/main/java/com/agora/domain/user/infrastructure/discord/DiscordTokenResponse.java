@@ -16,5 +16,6 @@ public class DiscordTokenResponse {
     @JsonProperty("refresh_token")
     public String refreshToken;
 
+    @JsonProperty("scope")
     public String scope;
 }

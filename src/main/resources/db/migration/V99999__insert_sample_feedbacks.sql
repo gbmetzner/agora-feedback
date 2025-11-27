@@ -1,10 +1,10 @@
 -- Insert sample users with all required columns
 INSERT INTO "user" (id, username, email, discord_id, discord_username, name, created_at, updated_at, archived_at) VALUES
-    (117457749108987388, 'alice.johnson','alice.johnson@example.com', 'discord_alice_001', 'AliceJohnson#1234', 'Alice Johnson', '2025-11-20 08:00:00+00:00', '2025-11-20 10:15:00+00:00', NULL),
-    (117457749108987389, 'bob.smith','bob.smith@example.com', 'discord_bob_002', 'BobSmith#5678', 'Bob Smith', '2025-11-18 09:30:00+00:00', '2025-11-20 11:30:00+00:00', NULL),
-    (117457749108987390, 'carol.williams','carol.williams@example.com', 'discord_carol_003', 'CarolWilliams#9012', 'Carol Williams', '2025-11-15 14:20:00+00:00', '2025-11-20 09:45:00+00:00', NULL),
-    (117457749108987391, 'david.brown','david.brown@example.com', 'discord_david_004', 'DavidBrown#3456', 'David Brown', '2025-11-12 11:45:00+00:00', '2025-11-20 08:20:00+00:00', NULL),
-    (117457749108987393, 'emma.davis','emma.davis@example.com', 'discord_emma_005', 'EmmaDavis#7890', 'Emma Davis', '2025-11-10 16:00:00+00:00', '2025-11-20 12:00:00+00:00', NULL);
+    (117457749108987388, 'alice.johnson','alice.johnson@example.com', 117457749108987388, 'AliceJohnson#1234', 'Alice Johnson', '2025-11-20 08:00:00+00:00', '2025-11-20 10:15:00+00:00', NULL),
+    (117457749108987389, 'bob.smith','bob.smith@example.com', 117457749108987389, 'BobSmith#5678', 'Bob Smith', '2025-11-18 09:30:00+00:00', '2025-11-20 11:30:00+00:00', NULL),
+    (117457749108987390, 'carol.williams','carol.williams@example.com', 117457749108987390, 'CarolWilliams#9012', 'Carol Williams', '2025-11-15 14:20:00+00:00', '2025-11-20 09:45:00+00:00', NULL),
+    (117457749108987391, 'david.brown','david.brown@example.com', 117457749108987391, 'DavidBrown#3456', 'David Brown', '2025-11-12 11:45:00+00:00', '2025-11-20 08:20:00+00:00', NULL),
+    (117457749108987393, 'emma.davis','emma.davis@example.com', 117457749108987393, 'EmmaDavis#7890', 'Emma Davis', '2025-11-10 16:00:00+00:00', '2025-11-20 12:00:00+00:00', NULL);
 
 -- Insert sample categories
 INSERT INTO category (id, name) VALUES

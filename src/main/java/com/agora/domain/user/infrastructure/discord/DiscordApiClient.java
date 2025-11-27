@@ -1,5 +1,6 @@
 package com.agora.domain.user.infrastructure.discord;
 
+import io.quarkus.rest.client.reactive.ClientBasicAuth;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
@@ -7,8 +8,9 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 /**
  * REST client for Discord API
  */
-@RegisterRestClient(configKey = "discord-api")
+@RegisterRestClient(configKey = "discord",baseUri = "https://discord.com/api/v10")
 @Path("/")
+@ClientBasicAuth(username = "${discord.client-id}", password = "${discord.client-secret}")
 public interface DiscordApiClient {
 
     /**
@@ -23,7 +25,8 @@ public interface DiscordApiClient {
             @FormParam("client_secret") String clientSecret,
             @FormParam("grant_type") String grantType,
             @FormParam("code") String code,
-            @FormParam("redirect_uri") String redirectUri
+            @FormParam("redirect_uri") String redirectUri,
+            @FormParam("scope") String scope
     );
 
     /**
@@ -32,5 +35,5 @@ public interface DiscordApiClient {
     @GET
     @Path("/users/@me")
     @Produces(MediaType.APPLICATION_JSON)
-    DiscordUserResponse getUserInfo( @HeaderParam("Authorization") String authorization    );
+    DiscordUserResponse getUserInfo( @HeaderParam("Authorization") String authorization );
 }

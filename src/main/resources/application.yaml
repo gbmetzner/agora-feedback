@@ -14,6 +14,11 @@ quarkus:
     jdbc-url: ${quarkus.datasource.jdbc.url}
     username: ${quarkus.datasource.username}
     password: ${quarkus.datasource.password}
+  rest-client:
+    log-formatted-body: true
+    log-body: true
+    logging:
+      scope: request-response
 
 '%dev':
   quarkus:
@@ -26,7 +31,6 @@ quarkus:
         origins: ["http://localhost:8081","http://localhost:8082"]
         access-control-max-age: 86400
 
-
 agora:
   feedback:
     id-generation:
@@ -35,14 +39,14 @@ agora:
       epoch: 2025-01-01T00:00:00.000Z
 
 discord:
-  oauth:
-    client-id: 1442683898411618306
-    client-secret: 78162399fda3b978fadfd53b352fd9fdbc9002cf125c337e937c9150b8ff4fa5
-    redirect-uri: http://localhost:8081/api/auth/discord/callback
-    auth-uri: https://discord.com/api/oauth2/authorize
-    token-uri: https://discord.com/api/oauth2/token
-    user-info-uri: https://discord.com/api/users/@me
-    scopes: identify email
+  url: https://discord.com/api/v10
+  client-id: 1442683898411618306
+  client-secret: X_LvZq-3Cio8oMGY9bgt9uQWz5VT8O6E
+  redirect-url: http://localhost:8080/api/v1/auth/discord/callback
+  authorize-url: https://discord.com/api/oauth2/authorize
+  token-uri: https://discord.com/api/oauth2/token
+  user-info-uri: https://discord.com/api/users/@me
+  scope: identify email
 
 mp:
   jwt:

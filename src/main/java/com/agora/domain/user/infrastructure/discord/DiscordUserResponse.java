@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DiscordUserResponse {
 
-    public String id;
+    public Long id;
     public String username;
+    @JsonProperty("global_name")
+    public String globalName;
     public String discriminator;  // e.g., "0001"
     public String avatar;
     public String email;

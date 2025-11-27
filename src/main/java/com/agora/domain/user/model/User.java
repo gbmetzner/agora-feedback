@@ -18,7 +18,7 @@ public class User extends PanacheEntityBase {
 
     @NotBlank(message = "User name cannot be blank")
     @Size(min = 2, max = 255, message = "User name must be between 2 and 255 characters")
-    private String name;
+    public String name;
     @Column(unique = true, nullable = false, length = 100)
     public String username;
 
@@ -30,7 +30,7 @@ public class User extends PanacheEntityBase {
 
     // Discord-specific fields
     @Column(name = "discord_id", unique = true)
-    public String discordId;
+    public Long discordId;
 
     @Column(name = "discord_username")
     public String discordUsername;

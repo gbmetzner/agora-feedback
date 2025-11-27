@@ -27,14 +27,16 @@ public class DiscordAuthService {
    private final UserRepository userRepository;
    private final JwtService jwtService;
 
-    @ConfigProperty(name = "discord.oauth.client-id")
+    @ConfigProperty(name = "discord.client-id")
     String clientId;
 
-    @ConfigProperty(name = "discord.oauth.client-secret")
+    @ConfigProperty(name = "discord.client-secret")
     String clientSecret;
 
-    @ConfigProperty(name = "discord.oauth.redirect-uri")
+    @ConfigProperty(name = "discord.redirect-url")
     String redirectUri;
+
+    @ConfigProperty(name = "discord.scope") String scope;
 
     @Inject
     public DiscordAuthService(@RestClient DiscordApiClient discordClient, UserRepository userRepository, JwtService jwtService) {
@@ -58,13 +60,7 @@ public class DiscordAuthService {
      * Step 1: Exchange authorization code for Discord access token
      */
     private DiscordTokenResponse exchangeCodeForToken(String code) {
-        return discordClient.exchangeCode(
-                clientId,
-                clientSecret,
-                "authorization_code",
-                code,
-                redirectUri
-        );
+        return discordClient.exchangeCode(clientId,                clientSecret,                "authorization_code",                code,                redirectUri, scope        );
     }
 
     /**
@@ -101,6 +97,7 @@ public class DiscordAuthService {
         User user = new User();
         user.discordId = discordUser.id;
         user.username = discordUser.username;
+        user.name = discordUser.globalName;
         user.discordUsername = discordUser.getFullUsername();
         user.email = discordUser.email;
         user.avatarUrl = discordUser.getAvatarUrl();

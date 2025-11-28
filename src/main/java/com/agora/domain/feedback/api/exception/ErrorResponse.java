@@ -1,88 +1,53 @@
 package com.agora.domain.feedback.api.exception;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
-public class ErrorResponse {
-    private int status;
-    private String message;
-    private OffsetDateTime timestamp;
-    private List<FieldError> errors;
-
-    public ErrorResponse() {
+/**
+ * Standard error response for API failures.
+ *
+ * @param status HTTP status code
+ * @param message Human-readable error message
+ * @param timestamp When the error occurred
+ * @param errors List of field validation errors (optional)
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record ErrorResponse(
+        int status,
+        String message,
+        OffsetDateTime timestamp,
+        List<FieldError> errors
+) {
+    /**
+     * Create an error response with current timestamp and no field errors.
+     *
+     * @param status HTTP status code
+     * @param message Error message
+     * @return ErrorResponse with current timestamp
+     */
+    public static ErrorResponse of(int status, String message) {
+        return new ErrorResponse(status, message, OffsetDateTime.now(), null);
     }
 
-    public ErrorResponse(int status, String message) {
-        this.status = status;
-        this.message = message;
-        this.timestamp = OffsetDateTime.now();
+    /**
+     * Create an error response with field validation errors.
+     *
+     * @param status HTTP status code
+     * @param message Error message
+     * @param errors Field validation errors
+     * @return ErrorResponse with current timestamp and field errors
+     */
+    public static ErrorResponse of(int status, String message, List<FieldError> errors) {
+        return new ErrorResponse(status, message, OffsetDateTime.now(), errors);
     }
 
-    public ErrorResponse(int status, String message, OffsetDateTime timestamp, List<FieldError> errors) {
-        this.status = status;
-        this.message = message;
-        this.timestamp = timestamp;
-        this.errors = errors;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public OffsetDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(OffsetDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public List<FieldError> getErrors() {
-        return errors;
-    }
-
-    public void setErrors(List<FieldError> errors) {
-        this.errors = errors;
-    }
-
-    public static class FieldError {
-        private String field;
-        private String message;
-
-        public FieldError() {
-        }
-
-        public FieldError(String field, String message) {
-            this.field = field;
-            this.message = message;
-        }
-
-        public String getField() {
-            return field;
-        }
-
-        public void setField(String field) {
-            this.field = field;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
+    /**
+     * Represents a single field validation error.
+     *
+     * @param field Name of the field that failed validation
+     * @param message Validation error message
+     */
+    public record FieldError(String field, String message) {}
 }

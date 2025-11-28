@@ -31,6 +31,17 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
+/**
+ * Application service for feedback management operations.
+ * <p>
+ * Handles business logic for feedback creation, retrieval, updates, and deletion.
+ * Coordinates between repositories and enforces business rules and validations.
+ * All public methods are transactional with proper error handling.
+ * </p>
+ *
+ * @author Agora Team
+ * @version 1.0
+ */
 @ApplicationScoped
 public class FeedbackApplicationService {
     private final FeedbackRepository feedbackRepository;
@@ -49,6 +60,14 @@ public class FeedbackApplicationService {
         this.commentRepository = commentRepository;
     }
 
+    /**
+     * Creates new feedback with the provided details.
+     *
+     * @param command The feedback creation command containing title, description, and optional metadata
+     * @return FeedbackResponse containing the newly created feedback details
+     * @throws CategoryNotFoundException if specified category does not exist
+     * @throws UserNotFoundException if specified author does not exist
+     */
     @Transactional
     public FeedbackResponse createFeedback(@Valid @NotNull CreateFeedbackCommand command) {
         Feedback feedback = new Feedback(
@@ -84,6 +103,16 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    /**
+     * Updates an existing feedback item with new details.
+     *
+     * @param id The feedback ID to update
+     * @param command The update command containing new feedback details
+     * @return Updated FeedbackResponse
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     * @throws CategoryNotFoundException if specified category does not exist
+     * @throws UserNotFoundException if specified author does not exist
+     */
     @Transactional
     public FeedbackResponse updateFeedback(@NotNull Long id, @Valid @NotNull UpdateFeedbackCommand command) {
         Feedback feedback = feedbackRepository.findById(id);
@@ -122,6 +151,13 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    /**
+     * Retrieves a feedback item by its ID.
+     *
+     * @param id The feedback ID
+     * @return FeedbackResponse containing the feedback details
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     */
     @Transactional
     public FeedbackResponse getFeedback(@NotNull Long id) {
         Feedback feedback = feedbackRepository.findById(id);
@@ -131,6 +167,14 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    /**
+     * Retrieves all feedbacks with pagination and optional sorting.
+     *
+     * @param pageNumber The page number (1-indexed). Defaults to 1 if less than 1.
+     * @param pageSize The number of items per page (1-100). Defaults to 10 if less than 1, capped at 100.
+     * @param sortOrder Sort order: "oldest" for ascending, any other value for descending (default)
+     * @return PaginatedFeedbackResponse containing paginated feedback items with metadata
+     */
     @Transactional
     public PaginatedFeedbackResponse getAllFeedbacksPaginated(int pageNumber, int pageSize, String sortOrder) {
         // Validate inputs
@@ -156,6 +200,11 @@ public class FeedbackApplicationService {
         return new PaginatedFeedbackResponse(items, page, size, totalItems, totalPages);
     }
 
+    /**
+     * Retrieves all feedbacks without pagination.
+     *
+     * @return List of all FeedbackResponse items
+     */
     @Transactional
     public List<FeedbackResponse> getAllFeedbacks() {
         return feedbackRepository.findAll()
@@ -164,6 +213,12 @@ public class FeedbackApplicationService {
                 .toList();
     }
 
+    /**
+     * Deletes a feedback item by its ID.
+     *
+     * @param id The feedback ID to delete
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     */
     @Transactional
     public void deleteFeedback(@NotNull Long id) {
         Feedback feedback = feedbackRepository.findById(id);
@@ -173,6 +228,13 @@ public class FeedbackApplicationService {
         feedbackRepository.deleteById(id);
     }
 
+    /**
+     * Archives a feedback item, marking it as inactive without deletion.
+     *
+     * @param id The feedback ID to archive
+     * @return Updated FeedbackResponse with archived flag set
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     */
     @Transactional
     public FeedbackResponse archiveFeedback(@NotNull Long id) {
         Feedback feedback = feedbackRepository.findById(id);
@@ -184,6 +246,13 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    /**
+     * Reopens an archived feedback item, making it active again.
+     *
+     * @param id The feedback ID to reopen
+     * @return Updated FeedbackResponse with reopened status
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     */
     @Transactional
     public FeedbackResponse reopenFeedback(@NotNull Long id) {
         Feedback feedback = feedbackRepository.findById(id);
@@ -195,6 +264,15 @@ public class FeedbackApplicationService {
         return toResponse(feedback);
     }
 
+    /**
+     * Adds a new comment to an existing feedback item.
+     *
+     * @param feedbackId The feedback ID to comment on
+     * @param request The comment creation request containing text and author details
+     * @return CommentResponse containing the newly created comment
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     * @throws UserNotFoundException if the comment author does not exist
+     */
     @Transactional
     public CommentResponse addComment(@NotNull Long feedbackId, @Valid @NotNull CreateCommentRequest request) {
         Feedback feedback = feedbackRepository.findById(feedbackId);
@@ -224,13 +302,20 @@ public class FeedbackApplicationService {
                 feedback.getUpvotes(),
                 feedback.getComments(),
                 feedback.getStatus(),
-                feedback.getCategory().getName(),
-                feedback.getAuthor().getName(),
+                feedback.getCategory() != null ? feedback.getCategory().getName() : null,
+                feedback.getAuthor() != null ? feedback.getAuthor().getName() : null,
                 feedback.getCreatedAt(),
                 feedback.isArchived()
         );
     }
 
+    /**
+     * Retrieves all comments for a specific feedback item.
+     *
+     * @param feedbackId The feedback ID to retrieve comments for
+     * @return List of CommentResponse items for the feedback
+     * @throws FeedbackNotFoundException if feedback with given ID does not exist
+     */
     @Transactional
     public List<CommentResponse> getCommentsByFeedbackId(@NotNull Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId);

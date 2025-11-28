@@ -1,4 +1,23 @@
 package com.agora.domain.feedback.model.dto;
 
-public record CommentAuthorResponse (String id, String username){
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+/**
+ * Response containing comment author information.
+ * <p>
+ * Provides basic author details for comment responses.
+ * </p>
+ */
+@Schema(
+    name = "CommentAuthorResponse",
+    description = "Author information for a comment",
+    example = "{\"id\": \"user-1\", \"username\": \"PlayerOne\"}"
+)
+public record CommentAuthorResponse(
+        @Schema(description = "Unique author identifier", example = "user-1")
+        String id,
+
+        @Schema(description = "Author username", example = "PlayerOne")
+        String username
+) {
 }

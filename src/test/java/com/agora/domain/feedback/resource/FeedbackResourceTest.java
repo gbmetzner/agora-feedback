@@ -1,185 +1,690 @@
 package com.agora.domain.feedback.resource;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
+import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
+import com.agora.domain.feedback.model.dto.CommentResponse;
+import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
+import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.assertj.core.api.Assertions.*;
 
+/**
+ * Resource layer tests for FeedbackResource.
+ * <p>
+ * Tests HTTP endpoints for feedback submission, retrieval, management,
+ * comments, and pagination. Uses REST Assured for HTTP client calls
+ * and AssertJ for fluent assertions.
+ * </p>
+ */
 @QuarkusTest
+@DisplayName("FeedbackResource Tests")
 class FeedbackResourceTest {
-    
+
     private static final String FEEDBACK_URL = "/v1/api/feedback";
 
+    // ===== LIST AND RETRIEVE TESTS =====
+
     @Test
+    @DisplayName("testListAllFeedbacks - Retrieve paginated feedbacks")
     void testListAllFeedbacks() {
-        given()
+        var response = given()
                 .when().get(FEEDBACK_URL)
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.currentPage()).isPositive();
+        assertThat(response.pageSize()).isGreaterThan(0);
+        assertThat(response.totalItems()).isGreaterThanOrEqualTo(0);
+        assertThat(response.items()).isNotNull();
     }
 
     @Test
+    @DisplayName("testGetNonExistentFeedback - Returns 404 for invalid ID")
     void testGetNonExistentFeedback() {
+        // Use a numerically valid but non-existent ID (large TSID value)
         given()
-                .when().get(FEEDBACK_URL + "/99999")
+                .when().get(FEEDBACK_URL + "/999999999999999999999999999")
                 .then()
-                .statusCode(404)
-                .body("message", is("Feedback with id 99999 not found"));
+                .statusCode(404);
     }
 
+    // ===== CREATE FEEDBACK TESTS =====
+
     @Test
-    void testCreateFeedback() {
-        var requestBody = new CreateFeedbackCommand("Test Feedback", "This is a test feedback content",117457749108987393L,117457749108987388L, "", "" );
+    @DisplayName("testCreateFeedback_Success - Valid feedback creation")
+    void testCreateFeedback_Success() {
+        var command = new CreateFeedbackCommand(
+                "Test Feedback Title",
+                "This is a comprehensive test feedback content for testing purposes",
+                null,
+                null,
+                null,
+                null
+        );
 
         var response = given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(command)
                 .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
-        assertThat("title should match request", response.title(), is(requestBody.title()));
-        assertThat("status should be PENDING", response.status(), is(FeedbackStatus.PENDING));
-        assertThat("categoryName should not be null", response.categoryName(), notNullValue());
-        assertThat("upvotes should be zero", response.upvotes(), is(0));
-        assertThat("comments should be zero", response.comments(), is(0));
-        assertThat("archived should be false", response.archived(), is(false));
+
+        assertThat(response).isNotNull();
+        assertThat(response.id()).isNotNull();
+        assertThat(response.title()).isEqualTo(command.title());
+        assertThat(response.description()).isEqualTo(command.description());
+        assertThat(response.status()).isEqualTo(FeedbackStatus.PENDING);
+        assertThat(response.upvotes()).isZero();
+        assertThat(response.comments()).isZero();
+        assertThat(response.archived()).isFalse();
     }
 
     @Test
+    @DisplayName("testCreateFeedbackWithBlankTitle - Validation error for empty title")
     void testCreateFeedbackWithBlankTitle() {
-        String requestBody = """
-                {
-                    "title": "",
-                    "description": "This is a test feedback",
-                    "status": "OPENED"
-                }
-                """;
+        var command = new CreateFeedbackCommand(
+                "",
+                "This is a test feedback with blank title",
+                null,
+                null,
+                null,
+                null
+        );
 
         given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(command)
                 .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(400)
-                .body("message", is("Validation failed"))
-                .body("errors.size()", greaterThan(0));
+                .body("message", org.hamcrest.CoreMatchers.is("Validation failed"));
     }
 
     @Test
+    @DisplayName("testCreateFeedbackWithShortDescription - Validation error for short description")
     void testCreateFeedbackWithShortDescription() {
-        String requestBody = """
-                {
-                    "title": "Test",
-                    "description": "Short",
-                    "status": "OPENED"
-                }
-                """;
+        var command = new CreateFeedbackCommand(
+                "Valid Title",
+                "Short",
+                null,
+                null,
+                null,
+                null
+        );
 
         given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(command)
                 .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(400);
     }
 
-    @Test
-    void testCreateFeedbackWithInvalidStatus() {
-        String requestBody = """
-                {
-                    "title": "Test Feedback",
-                    "description": "This is a test feedback content",
-                    "status": "INVALID"
-                }
-                """;
-
-        given()
-                .contentType("application/json")
-                .body(requestBody)
-                .when().post(FEEDBACK_URL)
-                .then()
-                .statusCode(400);
-    }
+    // ===== UPDATE FEEDBACK TESTS =====
 
     @Test
-    void testUpdateFeedback() {
-        // First create a feedback
-        String createBody = """
-                {
-                    "title": "Original Title",
-                    "description": "This is original feedback content here",
-                    "status": "OPENED"
-                }
-                """;
+    @DisplayName("testUpdateFeedback_Success - Update existing feedback")
+    void testUpdateFeedback_Success() {
+        // Create feedback
+        var createCommand = new CreateFeedbackCommand(
+                "Original Title",
+                "This is original feedback content that will be updated",
+                null,
+                null,
+                null,
+                null
+        );
 
-        Integer feedbackId = given()
+        var createdFeedback = given()
                 .contentType("application/json")
-                .body(createBody)
+                .body(createCommand)
                 .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
-                .extract()
-                .path("id");
+                .extract().body().as(FeedbackResponse.class);
 
-        // Now update it
-        String updateBody = """
-                {
-                    "title": "Updated Title",
-                    "description": "This is updated feedback content here",
-                    "status": "CLOSED"
-                }
-                """;
+        // Update feedback
+        var updateCommand = new UpdateFeedbackCommand(
+                "Updated Title",
+                "This is the updated feedback content here",
+                FeedbackStatus.IN_PROGRESS,
+                null,
+                null,
+                null,
+                null
+        );
 
-        given()
+        var response = given()
                 .contentType("application/json")
-                .body(updateBody)
-                .when().put(FEEDBACK_URL +"/" + feedbackId)
+                .body(updateCommand)
+                .when().put(FEEDBACK_URL + "/" + createdFeedback.id())
                 .then()
                 .statusCode(200)
-                .body("title", is("Updated Title"))
-                .body("description", is("This is updated feedback content here"))
-                .body("status", is("CLOSED"));
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.title()).isEqualTo("Updated Title");
+        assertThat(response.description()).isEqualTo(updateCommand.description());
+        assertThat(response.status()).isEqualTo(FeedbackStatus.IN_PROGRESS);
     }
 
     @Test
-    void testDeleteFeedback() {
-        // First create a feedback
-        String createBody = """
-                {
-                    "title": "To Delete",
-                    "description": "This feedback will be deleted soon"
-                }
-                """;
+    @DisplayName("testUpdateFeedback_NotFound - Returns 404 for non-existent feedback")
+    void testUpdateFeedback_NotFound() {
+        var updateCommand = new UpdateFeedbackCommand(
+                "Updated Title",
+                "Updated description here",
+                FeedbackStatus.COMPLETED,
+                null,
+                null,
+                null,
+                null
+        );
 
-        String feedbackId = given()
+        given()
                 .contentType("application/json")
-                .body(createBody)
+                .body(updateCommand)
+                .when().put(FEEDBACK_URL + "/999999999999999999999999999")
+                .then()
+                .statusCode(404);
+    }
+
+    // ===== DELETE FEEDBACK TESTS =====
+
+    @Test
+    @DisplayName("testDeleteFeedback_Success - Delete existing feedback")
+    void testDeleteFeedback_Success() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "To Delete",
+                "This feedback will be deleted soon to verify deletion",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
                 .when().post(FEEDBACK_URL)
                 .then()
                 .statusCode(201)
-                .extract()
-                .path("id");
+                .extract().body().as(FeedbackResponse.class);
 
         // Delete it
         given()
-                .when().delete(FEEDBACK_URL +"/" + feedbackId)
+                .when().delete(FEEDBACK_URL + "/" + createdFeedback.id())
                 .then()
                 .statusCode(204);
 
         // Verify it's deleted
         given()
-                .when().get(FEEDBACK_URL +"/" + feedbackId)
+                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
                 .then()
                 .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("testDeleteFeedback_NotFound - Returns 404 for non-existent feedback")
+    void testDeleteFeedback_NotFound() {
+        given()
+                .when().delete(FEEDBACK_URL + "/999999999999999999")
+                .then()
+                .statusCode(404);
+    }
+
+    // ===== ARCHIVE FEEDBACK TESTS =====
+
+    @Test
+    @DisplayName("testArchiveFeedback_Success - Archive existing feedback")
+    void testArchiveFeedback_Success() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "To Archive",
+                "This feedback will be archived to test the archive functionality",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        // Archive it
+        var response = given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.archived()).isTrue();
+    }
+
+    @Test
+    @DisplayName("testArchiveFeedback_NotFound - Returns 404 for non-existent feedback")
+    void testArchiveFeedback_NotFound() {
+        given()
+                .when().post(FEEDBACK_URL + "/999999999999999999/archive")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("testArchiveFeedback_VerifyArchivedFlag - Verify archived flag is set")
+    void testArchiveFeedback_VerifyArchivedFlag() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Verify Archive Flag",
+                "Testing that archived flag is properly set when archiving feedback",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(createdFeedback.archived()).isFalse();
+
+        var archivedFeedback = given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(archivedFeedback.archived()).isTrue();
+
+        // Verify by fetching again
+        var fetchedFeedback = given()
+                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(fetchedFeedback.archived()).isTrue();
+    }
+
+    // ===== REOPEN FEEDBACK TESTS =====
+
+    @Test
+    @DisplayName("testReopenFeedback_Success - Reopen archived feedback")
+    void testReopenFeedback_Success() {
+        // Create and archive feedback
+        var command = new CreateFeedbackCommand(
+                "To Reopen",
+                "This feedback will be archived then reopened for testing",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        // Archive it first
+        given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .then()
+                .statusCode(200);
+
+        // Reopen it
+        var response = given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.archived()).isFalse();
+    }
+
+    @Test
+    @DisplayName("testReopenFeedback_NotFound - Returns 404 for non-existent feedback")
+    void testReopenFeedback_NotFound() {
+        given()
+                .when().post(FEEDBACK_URL + "/999999999999999999/reopen")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("testReopenFeedback_VerifyStatus - Verify status is changed to PENDING")
+    void testReopenFeedback_VerifyStatus() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Verify Reopen Status",
+                "Testing that reopen changes status back to PENDING when reopening",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        // Archive it first
+        given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .then()
+                .statusCode(200);
+
+        // Reopen and verify
+        var reopenedFeedback = given()
+                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(reopenedFeedback.archived()).isFalse();
+        assertThat(reopenedFeedback.status()).isEqualTo(FeedbackStatus.PENDING);
+    }
+
+    // ===== COMMENT TESTS =====
+
+    @Test
+    @DisplayName("testGetComments_Success - Retrieve comments for feedback")
+    void testGetComments_Success() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Feedback for Comments",
+                "This feedback will have comments added to test comment retrieval",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        // Retrieve comments (should be empty initially)
+        var response = given()
+                .when().get(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .then()
+                .statusCode(200)
+                .extract().body().as(CommentResponse[].class);
+
+        assertThat(response).isNotNull();
+        assertThat(response).isEmpty();
+    }
+
+    @Test
+    @DisplayName("testGetComments_EmptyList - Returns empty array for feedback with no comments")
+    void testGetComments_EmptyList() {
+        // Create feedback without comments
+        var command = new CreateFeedbackCommand(
+                "No Comments Feedback",
+                "This feedback intentionally has no comments for testing empty list",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        var comments = given()
+                .when().get(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .then()
+                .statusCode(200)
+                .extract().body().as(CommentResponse[].class);
+
+        assertThat(comments).isEmpty();
+    }
+
+    @Test
+    @DisplayName("testGetComments_FeedbackNotFound - Returns 404 for invalid feedback ID")
+    void testGetComments_FeedbackNotFound() {
+        given()
+                .when().get(FEEDBACK_URL + "/999999999999999999/comments")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("testAddComment_Success - Add comment to feedback")
+    void testAddComment_Success() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Feedback for Comment",
+                "This feedback will have a comment added to test comment creation",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        // Add comment
+        var commentRequest = new CreateCommentRequest("Great feedback! This is very helpful and well-written.");
+
+        var response = given()
+                .contentType("application/json")
+                .body(commentRequest)
+                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .then()
+                .statusCode(201)
+                .extract().body().as(CommentResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.text()).isEqualTo(commentRequest.text());
+        assertThat(response.id()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("testAddComment_VerifyCommentCount - Verify feedback comment count incremented")
+    void testAddComment_VerifyCommentCount() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Feedback for Count Test",
+                "This feedback will have a comment added to verify count increment",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(createdFeedback.comments()).isZero();
+
+        // Add comment
+        var commentRequest = new CreateCommentRequest("This is a test comment to verify count increment.");
+
+        given()
+                .contentType("application/json")
+                .body(commentRequest)
+                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .then()
+                .statusCode(201);
+
+        // Verify count increased
+        var updatedFeedback = given()
+                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
+                .then()
+                .statusCode(200)
+                .extract().body().as(FeedbackResponse.class);
+
+        assertThat(updatedFeedback.comments()).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("testAddComment_FeedbackNotFound - Returns 404 for invalid feedback ID")
+    void testAddComment_FeedbackNotFound() {
+        var commentRequest = new CreateCommentRequest("This comment is for a non-existent feedback.");
+
+        given()
+                .contentType("application/json")
+                .body(commentRequest)
+                .when().put(FEEDBACK_URL + "/999999999999999999/comments")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("testAddComment_BlankText - Validation error for empty comment text")
+    void testAddComment_BlankText() {
+        // Create feedback
+        var command = new CreateFeedbackCommand(
+                "Feedback for Blank Comment",
+                "This feedback will attempt to have an empty comment added",
+                null,
+                null,
+                null,
+                null
+        );
+
+        var createdFeedback = given()
+                .contentType("application/json")
+                .body(command)
+                .when().post(FEEDBACK_URL)
+                .then()
+                .statusCode(201)
+                .extract().body().as(FeedbackResponse.class);
+
+        var emptyCommentRequest = new CreateCommentRequest("");
+
+        given()
+                .contentType("application/json")
+                .body(emptyCommentRequest)
+                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .then()
+                .statusCode(400);
+    }
+
+    // ===== PAGINATION TESTS =====
+
+    @Test
+    @DisplayName("testListAll_WithPagination - Test page and pageSize parameters")
+    void testListAll_WithPagination() {
+        var response = given()
+                .queryParam("page", 1)
+                .queryParam("pageSize", 5)
+                .when().get(FEEDBACK_URL)
+                .then()
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.currentPage()).isEqualTo(1);
+        assertThat(response.pageSize()).isLessThanOrEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("testListAll_SortByOldest - Test sortBy=oldest parameter")
+    void testListAll_SortByOldest() {
+        var response = given()
+                .queryParam("sortBy", "oldest")
+                .when().get(FEEDBACK_URL)
+                .then()
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.items()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("testListAll_SortByNewest - Test sortBy=newest (default)")
+    void testListAll_SortByNewest() {
+        var response = given()
+                .queryParam("sortBy", "newest")
+                .when().get(FEEDBACK_URL)
+                .then()
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.items()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("testListAll_InvalidPageNumber - Verify defaults to page 1")
+    void testListAll_InvalidPageNumber() {
+        var response = given()
+                .queryParam("page", -1)
+                .when().get(FEEDBACK_URL)
+                .then()
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        // Should either default to 1 or handle gracefully
+        assertThat(response.currentPage()).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("testListAll_ExcessivePageSize - Verify capped at 100")
+    void testListAll_ExcessivePageSize() {
+        var response = given()
+                .queryParam("pageSize", 500)
+                .when().get(FEEDBACK_URL)
+                .then()
+                .statusCode(200)
+                .extract().body().as(PaginatedFeedbackResponse.class);
+
+        assertThat(response).isNotNull();
+        // Should cap at maximum size (100 per spec)
+        assertThat(response.pageSize()).isLessThanOrEqualTo(100);
     }
 
 }

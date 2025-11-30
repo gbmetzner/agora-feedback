@@ -11,13 +11,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(
     name = "CommentAuthorResponse",
     description = "Author information for a comment",
-    example = "{\"id\": \"user-1\", \"username\": \"PlayerOne\"}"
+    examples = "{\"id\": \"user-1\", \"username\": \"PlayerOne\"}"
 )
 public record CommentAuthorResponse(
-        @Schema(description = "Unique author identifier", example = "user-1")
+        @Schema(description = "Unique author identifier", examples = "user-1")
         String id,
 
-        @Schema(description = "Author username", example = "PlayerOne")
+        @Schema(description = "Author username", examples = "PlayerOne")
         String username
 ) {
 }

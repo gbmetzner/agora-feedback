@@ -14,12 +14,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(
     name = "CreateCommentRequest",
     description = "Request to create a new comment on feedback",
-    example = "{\"text\": \"Great feedback! This is a valuable feature request that many users have been asking for.\"}"
+    examples = "{\"text\": \"Great feedback! This is a valuable feature request that many users have been asking for.\"}"
 )
 public record CreateCommentRequest(
         @Schema(
             description = "Comment text content",
-            example = "Great feedback! This is a valuable feature request that many users have been asking for.",
+            examples = "Great feedback! This is a valuable feature request that many users have been asking for.",
             minLength = 1,
             maxLength = 5000
         )

@@ -16,29 +16,29 @@ import java.time.OffsetDateTime;
 @Schema(
     name = "CommentResponse",
     description = "Feedback comment details response",
-    example = "{\"id\": \"117457749108987475\", \"author\": {\"id\": \"user-1\", \"username\": \"PlayerOne\"}, \"content\": \"Great feedback!\", \"isDeveloperResponse\": false, \"upvotes\": 5, \"createdAt\": \"2024-01-15T10:30:00Z\", \"updatedAt\": \"2024-01-15T10:30:00Z\"}"
+    examples = "{\"id\": \"117457749108987475\", \"author\": {\"id\": \"user-1\", \"username\": \"PlayerOne\"}, \"content\": \"Great feedback!\", \"isDeveloperResponse\": false, \"upvotes\": 5, \"createdAt\": \"2024-01-15T10:30:00Z\", \"updatedAt\": \"2024-01-15T10:30:00Z\"}"
 )
 public record CommentResponse(
-        @Schema(description = "Unique comment identifier", example = "117457749108987475")
+        @Schema(description = "Unique comment identifier", examples = "117457749108987475")
         String id,
 
         @Schema(description = "Author information")
         CommentAuthorResponse author,
 
         @JsonProperty("content")
-        @Schema(description = "Comment content text", example = "Great feedback!")
+        @Schema(description = "Comment content text", examples = "Great feedback!")
         String text,
 
-        @Schema(description = "Whether this is an official developer response", example = "false")
+        @Schema(description = "Whether this is an official developer response", examples = "false")
         boolean isDeveloperResponse,
 
-        @Schema(description = "Number of upvotes on this comment", example = "5")
+        @Schema(description = "Number of upvotes on this comment", examples = "5")
         int upvotes,
 
-        @Schema(description = "Timestamp when comment was created", example = "2024-01-15T10:30:00Z")
+        @Schema(description = "Timestamp when comment was created", examples = "2024-01-15T10:30:00Z")
         OffsetDateTime createdAt,
 
-        @Schema(description = "Timestamp when comment was last updated", example = "2024-01-15T10:30:00Z")
+        @Schema(description = "Timestamp when comment was last updated", examples = "2024-01-15T10:30:00Z")
         OffsetDateTime updatedAt
 ) {
 }

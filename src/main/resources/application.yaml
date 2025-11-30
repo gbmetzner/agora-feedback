@@ -1,13 +1,4 @@
 quarkus:
-  datasource:
-    db-kind: postgresql
-    username: postgres
-    password: agora
-    jdbc:
-      url: jdbc:postgresql://localhost:5432/agora_feedback
-    devservices:
-      image-name: postgres:16.2-alpine
-      show-logs: true
   flyway:
     migrate-at-start: true
     clean-at-start: true
@@ -19,17 +10,6 @@ quarkus:
     log-body: true
     logging:
       scope: request-response
-
-'%dev':
-  quarkus:
-    http:
-      cors:
-        enabled: true
-        methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
-        headers: Authorization, Content-Type
-        exposed-headers: Authorization, Content-Type
-        origins: ["http://localhost:8081","http://localhost:8082"]
-        access-control-max-age: 86400
 
 agora:
   feedback:
@@ -59,3 +39,39 @@ smallrye:
     sign:
       key:
         location: META-INF/resources/jwt-private-key.pem
+
+'%dev':
+  quarkus:
+    datasource:
+      db-kind: postgresql
+      username: postgres
+      password: agora
+      devservices:
+        image-name: postgres:16.2-alpine
+        show-logs: true
+        enabled: false
+        port: 5432
+        db-name: agora_feedback
+    http:
+      cors:
+        enabled: true
+        methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+        headers: Authorization, Content-Type
+        exposed-headers: Authorization, Content-Type
+        origins: ["http://localhost:8081","http://localhost:8082"]
+        access-control-max-age: 86400
+
+'test%':
+  quarkus:
+    datasource:
+      db-kind: postgresql
+      username: postgres
+      password: agora
+      jdbc:
+        url: jdbc:postgresql://localhost:5433/agora_feedback
+      devservices:
+        image-name: postgres:16.2-alpine
+        show-logs: true
+        enabled: false
+        port: 5433
+        db-name: agora_feedback

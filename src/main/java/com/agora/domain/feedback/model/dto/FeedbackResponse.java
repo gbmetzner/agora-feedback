@@ -17,40 +17,40 @@ import java.time.OffsetDateTime;
 @Schema(
     name = "FeedbackResponse",
     description = "Feedback item details response",
-    example = "{\"id\": \"117457749108987399\", \"title\": \"Dark mode support needed\", \"description\": \"Users are requesting a dark mode option for better usability in low-light environments.\", \"sentiment\": \"POSITIVE\", \"upvotes\": 45, \"comments\": 8, \"status\": \"ACKNOWLEDGED\", \"categoryName\": \"Feature Request\", \"authorName\": \"Bob Smith\", \"createdAt\": \"2025-11-20T11:30:00+00:00\", \"archived\": false}"
+    examples = "{\"id\": \"117457749108987399\", \"title\": \"Dark mode support needed\", \"description\": \"Users are requesting a dark mode option for better usability in low-light environments.\", \"sentiment\": \"POSITIVE\", \"upvotes\": 45, \"comments\": 8, \"status\": \"ACKNOWLEDGED\", \"categoryName\": \"Feature Request\", \"authorName\": \"Bob Smith\", \"createdAt\": \"2025-11-20T11:30:00+00:00\", \"archived\": false}"
 )
 public record FeedbackResponse(
-        @Schema(description = "Unique feedback identifier", example = "117457749108987399")
+        @Schema(description = "Unique feedback identifier", examples = "117457749108987399")
         String id,
 
-        @Schema(description = "Feedback title", example = "Dark mode support needed")
+        @Schema(description = "Feedback title", examples = "Dark mode support needed")
         String title,
 
-        @Schema(description = "Detailed feedback description", example = "Users are requesting a dark mode option for better usability in low-light environments.")
+        @Schema(description = "Detailed feedback description", examples = "Users are requesting a dark mode option for better usability in low-light environments.")
         String description,
 
-        @Schema(description = "Sentiment of the feedback", example = "POSITIVE", enumeration = {"POSITIVE", "NEGATIVE", "NEUTRAL"})
+        @Schema(description = "Sentiment of the feedback", examples = "POSITIVE", enumeration = {"POSITIVE", "NEGATIVE", "NEUTRAL"})
         String sentiment,
 
-        @Schema(description = "Number of upvotes", example = "45")
+        @Schema(description = "Number of upvotes", examples = "45")
         int upvotes,
 
-        @Schema(description = "Number of comments", example = "8")
+        @Schema(description = "Number of comments", examples = "8")
         int comments,
 
-        @Schema(description = "Current status of the feedback", example = "ACKNOWLEDGED", enumeration = {"PENDING", "ACKNOWLEDGED", "IN_PROGRESS", "COMPLETED"})
+        @Schema(description = "Current status of the feedback", examples = "ACKNOWLEDGED", enumeration = {"PENDING", "ACKNOWLEDGED", "IN_PROGRESS", "COMPLETED"})
         FeedbackStatus status,
 
-        @Schema(description = "Category name for this feedback", example = "Feature Request")
+        @Schema(description = "Category name for this feedback", examples = "Feature Request")
         String categoryName,
 
-        @Schema(description = "Name of the feedback author", example = "Bob Smith")
+        @Schema(description = "Name of the feedback author", examples = "Bob Smith")
         String authorName,
 
-        @Schema(description = "Timestamp when feedback was created", example = "2025-11-20T11:30:00+00:00")
+        @Schema(description = "Timestamp when feedback was created", examples = "2025-11-20T11:30:00+00:00")
         OffsetDateTime createdAt,
 
-        @Schema(description = "Whether the feedback is archived", example = "false")
+        @Schema(description = "Whether the feedback is archived", examples = "false")
         Boolean archived
 ) {
 }

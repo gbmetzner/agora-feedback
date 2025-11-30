@@ -2,6 +2,7 @@ package com.agora.domain.feedback.resource;
 
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
+import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.*;
 class FeedbackResourceTest {
 
     private static final String FEEDBACK_URL = "/v1/api/feedback";
+    private static final String INVALID_FEEDBACK_ID = IdHelper.toString(117457749108987300L);
 
     // ===== LIST AND RETRIEVE TESTS =====
 
@@ -51,7 +53,7 @@ class FeedbackResourceTest {
     void testGetNonExistentFeedback() {
         // Use a numerically valid but non-existent ID (large TSID value)
         given()
-                .when().get(FEEDBACK_URL + "/999999999999999999999999999")
+                .when().get(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
                 .then()
                 .statusCode(404);
     }
@@ -164,9 +166,11 @@ class FeedbackResourceTest {
         );
 
         var response = given()
+                .accept("application/json")
                 .contentType("application/json")
                 .body(updateCommand)
-                .when().put(FEEDBACK_URL + "/" + createdFeedback.id())
+                .when()
+                .patch(FEEDBACK_URL + "/" + createdFeedback.id())
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -193,7 +197,8 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(updateCommand)
-                .when().put(FEEDBACK_URL + "/999999999999999999999999999")
+                .when()
+                .patch(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
                 .then()
                 .statusCode(404);
     }
@@ -238,7 +243,7 @@ class FeedbackResourceTest {
     @DisplayName("testDeleteFeedback_NotFound - Returns 404 for non-existent feedback")
     void testDeleteFeedback_NotFound() {
         given()
-                .when().delete(FEEDBACK_URL + "/999999999999999999")
+                .when().delete(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
                 .then()
                 .statusCode(404);
     }
@@ -281,7 +286,9 @@ class FeedbackResourceTest {
     @DisplayName("testArchiveFeedback_NotFound - Returns 404 for non-existent feedback")
     void testArchiveFeedback_NotFound() {
         given()
-                .when().post(FEEDBACK_URL + "/999999999999999999/archive")
+                .accept("application/json")
+                .contentType("application/json")
+                .when().post(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID+"/archive")
                 .then()
                 .statusCode(404);
     }
@@ -310,7 +317,10 @@ class FeedbackResourceTest {
         assertThat(createdFeedback.archived()).isFalse();
 
         var archivedFeedback = given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .when()
+                .accept("application/json")
+                .contentType("application/json")
+                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -371,7 +381,10 @@ class FeedbackResourceTest {
     @DisplayName("testReopenFeedback_NotFound - Returns 404 for non-existent feedback")
     void testReopenFeedback_NotFound() {
         given()
-                .when().post(FEEDBACK_URL + "/999999999999999999/reopen")
+                .when()
+                .accept("application/json")
+                .contentType("application/json")
+                .post(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID + "/reopen")
                 .then()
                 .statusCode(404);
     }
@@ -399,13 +412,17 @@ class FeedbackResourceTest {
 
         // Archive it first
         given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .when().accept("application/json")
+                .contentType("application/json")
+                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200);
 
         // Reopen and verify
         var reopenedFeedback = given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
+                .when().accept("application/json")
+                .contentType("application/json")
+                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -482,7 +499,7 @@ class FeedbackResourceTest {
     @DisplayName("testGetComments_FeedbackNotFound - Returns 404 for invalid feedback ID")
     void testGetComments_FeedbackNotFound() {
         given()
-                .when().get(FEEDBACK_URL + "/999999999999999999/comments")
+                .when().get(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID + "/comments")
                 .then()
                 .statusCode(404);
     }
@@ -575,7 +592,7 @@ class FeedbackResourceTest {
         given()
                 .contentType("application/json")
                 .body(commentRequest)
-                .when().put(FEEDBACK_URL + "/999999999999999999/comments")
+                .when().put(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID + "/comments")
                 .then()
                 .statusCode(404);
     }
@@ -660,7 +677,8 @@ class FeedbackResourceTest {
     @Test
     @DisplayName("testListAll_InvalidPageNumber - Verify defaults to page 1")
     void testListAll_InvalidPageNumber() {
-        var response = given()
+        var response = given().accept("application/json")
+                .contentType("application/json")
                 .queryParam("page", -1)
                 .when().get(FEEDBACK_URL)
                 .then()
@@ -676,6 +694,8 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_ExcessivePageSize - Verify capped at 100")
     void testListAll_ExcessivePageSize() {
         var response = given()
+                .accept("application/json")
+                .contentType("application/json")
                 .queryParam("pageSize", 500)
                 .when().get(FEEDBACK_URL)
                 .then()

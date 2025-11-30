@@ -22,8 +22,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 @Path("/v1/api/feedback")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
 public class FeedbackResource {
 
@@ -52,17 +50,18 @@ public class FeedbackResource {
                     )
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
     public Response listAll(
             @Parameter(description = "Page number (1-indexed, default 1)", example = "1")
             @QueryParam("page") Integer page,
-            @Parameter(description = "Page size (default 10, max 100)", example = "10")
+            @Parameter(description = "Page size (default 10, max 20)", example = "10")
             @QueryParam("pageSize") Integer size,
             @Parameter(description = "Sort order: 'newest' (default) or 'oldest'", example = "newest")
             @QueryParam("sortBy") String sort) {
         LOGGER.info("Listing feedback items with pagination and sorting");
 
         int pageNum = page != null ? page : 1;
-        int pageSize = size != null ? size : 10;
+        int pageSize = size != null ?  Math.min(size, 20) : 10;
         String sortOrder = sort != null ? sort : "newest";
 
         PaginatedFeedbackResponse response = feedbackApplicationService.getAllFeedbacksPaginated(pageNum, pageSize, sortOrder);
@@ -89,6 +88,7 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getById(
             @Parameter(description = "Feedback ID", required = true)
             @PathParam("id") String id) {
@@ -119,6 +119,8 @@ public class FeedbackResource {
                     description = "Not authenticated"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response create(
             @Parameter(description = "Feedback creation data", required = true)
             CreateFeedbackCommand command) {
@@ -126,7 +128,7 @@ public class FeedbackResource {
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
-    @PUT
+    @PATCH
     @Path("/{id}")
     @Operation(
             summary = "Update feedback",
@@ -158,12 +160,14 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response update(
             @Parameter(description = "Feedback ID", required = true)
-            @PathParam("id") Long id,
+            @PathParam("id") String id,
             @Parameter(description = "Updated feedback data", required = true)
             UpdateFeedbackCommand command) {
-        FeedbackResponse response = feedbackApplicationService.updateFeedback(id, command);
+        FeedbackResponse response = feedbackApplicationService.updateFeedback(IdHelper.toLong(id), command);
         return Response.ok(response).build();
     }
 
@@ -191,6 +195,7 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
     public Response delete(
             @Parameter(description = "Feedback ID", required = true)
             @PathParam("id") String id) {
@@ -218,10 +223,11 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
     public Response archive(
             @Parameter(description = "Feedback ID", required = true)
-            @PathParam("id") Long id) {
-        FeedbackResponse response = feedbackApplicationService.archiveFeedback(id);
+            @PathParam("id") String id) {
+        var response = feedbackApplicationService.archiveFeedback(id);
         return Response.ok(response).build();
     }
 
@@ -245,10 +251,11 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
     public Response reopen(
             @Parameter(description = "Feedback ID", required = true)
-            @PathParam("id") Long id) {
-        FeedbackResponse response = feedbackApplicationService.reopenFeedback(id);
+            @PathParam("id") String id) {
+        FeedbackResponse response = feedbackApplicationService.reopenFeedback(IdHelper.toLong(id));
         return Response.ok(response).build();
     }
 
@@ -303,6 +310,8 @@ public class FeedbackResource {
                     description = "Feedback not found"
             )
     })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response addComment(
             @Parameter(description = "Feedback ID", required = true)
             @PathParam("id") String id,

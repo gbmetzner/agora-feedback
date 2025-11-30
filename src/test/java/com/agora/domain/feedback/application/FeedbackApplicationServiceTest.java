@@ -2,6 +2,7 @@ package com.agora.domain.feedback.application;
 
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
+import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.CategoryNotFoundException;
 import com.agora.domain.feedback.exception.FeedbackNotFoundException;
 import com.agora.domain.feedback.model.dto.CommentResponse;
@@ -362,11 +363,12 @@ class FeedbackApplicationServiceTest {
     @DisplayName("testArchiveFeedback_Success - Archive feedback")
     void testArchiveFeedback_Success() {
         // Arrange
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
+        var id = IdHelper.generateId();
+        when(feedbackRepository.findById(id)).thenReturn(testFeedback);
         doNothing().when(feedbackRepository).persist(any(Feedback.class));
 
         // Act
-        FeedbackResponse response = service.archiveFeedback(1L);
+        FeedbackResponse response = service.archiveFeedback(IdHelper.toString(id));
 
         // Assert
         assertThat(response).isNotNull();
@@ -377,11 +379,12 @@ class FeedbackApplicationServiceTest {
     @Test
     @DisplayName("testArchiveFeedback_NotFound - Throws FeedbackNotFoundException")
     void testArchiveFeedback_NotFound() {
+        var id = IdHelper.generateId();
         // Arrange
-        when(feedbackRepository.findById(999L)).thenReturn(null);
+        when(feedbackRepository.findById(id)).thenReturn(null);
 
         // Act & Assert
-        assertThatThrownBy(() -> service.archiveFeedback(999L))
+        assertThatThrownBy(() -> service.archiveFeedback(IdHelper.toString(id)))
                 .isInstanceOf(FeedbackNotFoundException.class);
     }
 
@@ -391,12 +394,13 @@ class FeedbackApplicationServiceTest {
     @DisplayName("testReopenFeedback_Success - Reopen closed feedback")
     void testReopenFeedback_Success() {
         // Arrange
+        var id = IdHelper.generateId();
         testFeedback.archive();
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
+        when(feedbackRepository.findById(id)).thenReturn(testFeedback);
         doNothing().when(feedbackRepository).persist(any(Feedback.class));
 
         // Act
-        FeedbackResponse response = service.reopenFeedback(1L);
+        FeedbackResponse response = service.reopenFeedback(id);
 
         // Assert
         assertThat(response).isNotNull();

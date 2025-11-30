@@ -236,8 +236,8 @@ public class FeedbackApplicationService {
      * @throws FeedbackNotFoundException if feedback with given ID does not exist
      */
     @Transactional
-    public FeedbackResponse archiveFeedback(@NotNull Long id) {
-        Feedback feedback = feedbackRepository.findById(id);
+    public FeedbackResponse archiveFeedback(@NotNull String id) {
+        var feedback = feedbackRepository.findById(IdHelper.toLong(id));
         if (feedback == null) {
             throw new FeedbackNotFoundException(id);
         }

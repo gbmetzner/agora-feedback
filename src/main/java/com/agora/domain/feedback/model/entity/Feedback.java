@@ -93,6 +93,7 @@ public class Feedback extends PanacheEntityBase {
         if (this.status == FeedbackStatus.COMPLETED) {
             this.status = FeedbackStatus.PENDING;
         }
+        this.archived = false;
     }
 
     public void changeSentiment(String newSentiment) {

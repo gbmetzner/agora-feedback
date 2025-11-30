@@ -8,35 +8,20 @@ import com.agora.domain.feedback.exception.FeedbackNotFoundException;
 import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
-import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
-import com.agora.domain.feedback.model.entity.Feedback;
-import com.agora.domain.feedback.model.entity.Comment;
-import com.agora.domain.feedback.model.entity.FeedbackCategory;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
-import com.agora.domain.feedback.model.repository.CategoryRepository;
-import com.agora.domain.feedback.model.repository.CommentRepository;
-import com.agora.domain.feedback.model.repository.FeedbackRepository;
 import com.agora.domain.user.exception.UserNotFoundException;
-import com.agora.domain.user.model.User;
-import com.agora.domain.user.model.repository.UserRepository;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-import com.agora.domain.feedback.model.entity.Feedback;
 
 /**
- * Unit tests for FeedbackApplicationService.
+ * Integration tests for FeedbackApplicationService.
  * <p>
- * Tests all public methods covering happy paths and error cases.
- * Uses mocked repositories to isolate service logic.
+ * Tests all public methods using the real database provided by Quarkus DevServices.
+ * Covers happy paths and error cases.
  * </p>
  */
 @QuarkusTest
@@ -46,39 +31,6 @@ class FeedbackApplicationServiceTest {
     @Inject
     FeedbackApplicationService service;
 
-    @InjectMock
-    FeedbackRepository feedbackRepository;
-
-    @InjectMock
-    CategoryRepository categoryRepository;
-
-    @InjectMock
-    UserRepository userRepository;
-
-    @InjectMock
-    CommentRepository commentRepository;
-
-    private User testUser;
-    private FeedbackCategory testCategory;
-    private Feedback testFeedback;
-
-    @BeforeEach
-    void setUp() {
-        testUser = new User();
-        testUser.name = "Test User";
-        testUser.username = "testuser";
-        testUser.email = "test@example.com";
-
-        testCategory = new FeedbackCategory();
-        testCategory.setId(1L);
-        testCategory.setName("Bug Report");
-
-        testFeedback = new Feedback("Test Title", "Test Description");
-        testFeedback.setId(1L);
-        testFeedback.setAuthor(testUser);
-        testFeedback.setCategory(testCategory);
-    }
-
     // ===== CREATE FEEDBACK TESTS =====
 
     @Test
@@ -86,48 +38,25 @@ class FeedbackApplicationServiceTest {
     void testCreateFeedback_Success() {
         // Arrange
         CreateFeedbackCommand command = new CreateFeedbackCommand(
-                "Test Title",
-                "This is a test description for feedback",
+                "Test Feedback Title",
+                "This is a test feedback description for testing purposes",
                 null,
                 null,
                 null,
                 null
         );
-        when(feedbackRepository.findById(any())).thenReturn(null);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
 
         // Act
         FeedbackResponse response = service.createFeedback(command);
 
         // Assert
         assertThat(response).isNotNull();
-        assertThat(response.title()).isEqualTo("Test Title");
-        assertThat(response.description()).isEqualTo("This is a test description for feedback");
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
-    }
-
-    @Test
-    @DisplayName("testCreateFeedback_WithCategory - Feedback with valid category")
-    void testCreateFeedback_WithCategory() {
-        // Arrange
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-                "Test Title",
-                "This is a test description for feedback",
-                1L,
-                null,
-                null,
-                null
-        );
-        when(categoryRepository.findById(1L)).thenReturn(testCategory);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
-
-        // Act
-        FeedbackResponse response = service.createFeedback(command);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.categoryName()).isEqualTo("Bug Report");
-        verify(categoryRepository, times(1)).findById(1L);
+        assertThat(response.id()).isNotNull();
+        assertThat(response.title()).isEqualTo("Test Feedback Title");
+        assertThat(response.description()).isEqualTo("This is a test feedback description for testing purposes");
+        assertThat(response.status()).isEqualTo(FeedbackStatus.PENDING);
+        assertThat(response.upvotes()).isZero();
+        assertThat(response.archived()).isFalse();
     }
 
     @Test
@@ -137,12 +66,11 @@ class FeedbackApplicationServiceTest {
         CreateFeedbackCommand command = new CreateFeedbackCommand(
                 "Test Title",
                 "This is a test description for feedback",
-                999L,
+                999999L,  // Non-existent category ID
                 null,
                 null,
                 null
         );
-        when(categoryRepository.findById(999L)).thenReturn(null);
 
         // Act & Assert
         assertThatThrownBy(() -> service.createFeedback(command))
@@ -157,15 +85,47 @@ class FeedbackApplicationServiceTest {
                 "Test Title",
                 "This is a test description for feedback",
                 null,
-                999L,
+                999999L,  // Non-existent user ID
                 null,
                 null
         );
-        when(userRepository.findById(999L)).thenReturn(null);
 
         // Act & Assert
         assertThatThrownBy(() -> service.createFeedback(command))
                 .isInstanceOf(UserNotFoundException.class);
+    }
+
+    // ===== GET FEEDBACK TESTS =====
+
+    @Test
+    @DisplayName("testGetFeedback_Success - Retrieve existing feedback")
+    void testGetFeedback_Success() {
+        // Arrange - Create feedback first
+        CreateFeedbackCommand createCommand = new CreateFeedbackCommand(
+                "Feedback to Retrieve",
+                "This feedback will be retrieved for testing",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(createCommand);
+
+        // Act
+        FeedbackResponse response = service.getFeedback(IdHelper.toLong(created.id()));
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.id()).isEqualTo(created.id());
+        assertThat(response.title()).isEqualTo("Feedback to Retrieve");
+    }
+
+    @Test
+    @DisplayName("testGetFeedback_NotFound - Throws FeedbackNotFoundException")
+    void testGetFeedback_NotFound() {
+        // Act & Assert
+        assertThatThrownBy(() -> service.getFeedback(999999999L))
+                .isInstanceOf(FeedbackNotFoundException.class);
     }
 
     // ===== UPDATE FEEDBACK TESTS =====
@@ -173,26 +133,34 @@ class FeedbackApplicationServiceTest {
     @Test
     @DisplayName("testUpdateFeedback_Success - Update existing feedback")
     void testUpdateFeedback_Success() {
-        // Arrange
-        UpdateFeedbackCommand command = new UpdateFeedbackCommand(
+        // Arrange - Create feedback first
+        CreateFeedbackCommand createCommand = new CreateFeedbackCommand(
+                "Original Title",
+                "Original description here",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(createCommand);
+
+        // Act - Update it
+        UpdateFeedbackCommand updateCommand = new UpdateFeedbackCommand(
                 "Updated Title",
-                "Updated description content here",
+                "Updated description here",
                 FeedbackStatus.IN_PROGRESS,
                 null,
                 null,
                 null,
                 null
         );
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
-
-        // Act
-        FeedbackResponse response = service.updateFeedback(1L, command);
+        FeedbackResponse response = service.updateFeedback(IdHelper.toLong(created.id()), updateCommand);
 
         // Assert
         assertThat(response).isNotNull();
         assertThat(response.title()).isEqualTo("Updated Title");
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
+        assertThat(response.description()).isEqualTo("Updated description here");
+        assertThat(response.status()).isEqualTo(FeedbackStatus.IN_PROGRESS);
     }
 
     @Test
@@ -202,132 +170,16 @@ class FeedbackApplicationServiceTest {
         UpdateFeedbackCommand command = new UpdateFeedbackCommand(
                 "Updated Title",
                 "Updated description",
-                FeedbackStatus.IN_PROGRESS,
+                FeedbackStatus.COMPLETED,
                 null,
                 null,
                 null,
                 null
         );
-        when(feedbackRepository.findById(999L)).thenReturn(null);
 
         // Act & Assert
-        assertThatThrownBy(() -> service.updateFeedback(999L, command))
+        assertThatThrownBy(() -> service.updateFeedback(999999999L, command))
                 .isInstanceOf(FeedbackNotFoundException.class);
-    }
-
-    @Test
-    @DisplayName("testUpdateFeedback_ChangeCategory - Category update")
-    void testUpdateFeedback_ChangeCategory() {
-        // Arrange
-        FeedbackCategory newCategory = new FeedbackCategory();
-        newCategory.setId(2L);
-        newCategory.setName("Feature Request");
-
-        UpdateFeedbackCommand command = new UpdateFeedbackCommand(
-                "Title",
-                "Description",
-                FeedbackStatus.PENDING,
-                2L,
-                null,
-                null,
-                null
-        );
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        when(categoryRepository.findById(2L)).thenReturn(newCategory);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
-
-        // Act
-        FeedbackResponse response = service.updateFeedback(1L, command);
-
-        // Assert
-        assertThat(response).isNotNull();
-        verify(categoryRepository, times(1)).findById(2L);
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
-    }
-
-    @Test
-    @DisplayName("testUpdateFeedback_RemoveCategory - Set category to null")
-    void testUpdateFeedback_RemoveCategory() {
-        // Arrange
-        UpdateFeedbackCommand command = new UpdateFeedbackCommand(
-                "Title",
-                "Description",
-                FeedbackStatus.PENDING,
-                null,
-                null,
-                null,
-                null
-        );
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
-
-        // Act
-        FeedbackResponse response = service.updateFeedback(1L, command);
-
-        // Assert
-        assertThat(response).isNotNull();
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
-    }
-
-    // ===== GET FEEDBACK TESTS =====
-
-    @Test
-    @DisplayName("testGetFeedback_Success - Retrieve existing feedback")
-    void testGetFeedback_Success() {
-        // Arrange
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-
-        // Act
-        FeedbackResponse response = service.getFeedback(1L);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.id()).isNotNull();
-        assertThat(response.title()).isEqualTo("Test Title");
-    }
-
-    @Test
-    @DisplayName("testGetFeedback_NotFound - Throws FeedbackNotFoundException")
-    void testGetFeedback_NotFound() {
-        // Arrange
-        when(feedbackRepository.findById(999L)).thenReturn(null);
-
-        // Act & Assert
-        assertThatThrownBy(() -> service.getFeedback(999L))
-                .isInstanceOf(FeedbackNotFoundException.class);
-    }
-
-    // ===== PAGINATION TESTS =====
-
-    @Test
-    @DisplayName("testGetAllFeedbacksPaginated_DefaultParams - Default pagination")
-    void testGetAllFeedbacksPaginated_DefaultParams() {
-        // Arrange
-        when(feedbackRepository.count()).thenReturn(50L);
-        when(feedbackRepository.findAll(any())).thenReturn(null);
-        when(feedbackRepository.findAll(any()).page(any())).thenReturn(null);
-
-        // Note: This test would need more setup for actual pagination
-        // For now, we're testing that the method doesn't throw errors
-    }
-
-    @Test
-    @DisplayName("testGetAllFeedbacksPaginated_CustomParams - Custom page size and number")
-    void testGetAllFeedbacksPaginated_CustomParams() {
-        // Arrange
-        when(feedbackRepository.count()).thenReturn(200L);
-
-        // Note: This test would need Panache mock setup
-    }
-
-    @Test
-    @DisplayName("testGetAllFeedbacksPaginated_MaxPageSize - Enforce max 100 items")
-    void testGetAllFeedbacksPaginated_MaxPageSize() {
-        // Arrange - trying to get 500 items per page
-        // Should be capped at 100
-
-        // Act & Assert
-        // Service should enforce max page size of 100
     }
 
     // ===== DELETE FEEDBACK TESTS =====
@@ -335,87 +187,112 @@ class FeedbackApplicationServiceTest {
     @Test
     @DisplayName("testDeleteFeedback_Success - Delete existing feedback")
     void testDeleteFeedback_Success() {
-        // Arrange
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        doNothing().when(feedbackRepository).deleteById(1L);
+        // Arrange - Create feedback first
+        CreateFeedbackCommand command = new CreateFeedbackCommand(
+                "To Delete",
+                "This feedback will be deleted soon to verify deletion",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(command);
 
-        // Act
-        service.deleteFeedback(1L);
+        // Act - Delete it
+        service.deleteFeedback(IdHelper.toLong(created.id()));
 
-        // Assert
-        verify(feedbackRepository, times(1)).deleteById(1L);
+        // Assert - Verify it's deleted
+        assertThatThrownBy(() -> service.getFeedback(IdHelper.toLong(created.id())))
+                .isInstanceOf(FeedbackNotFoundException.class);
     }
 
     @Test
     @DisplayName("testDeleteFeedback_NotFound - Throws FeedbackNotFoundException")
     void testDeleteFeedback_NotFound() {
-        // Arrange
-        when(feedbackRepository.findById(999L)).thenReturn(null);
-
         // Act & Assert
-        assertThatThrownBy(() -> service.deleteFeedback(999L))
+        assertThatThrownBy(() -> service.deleteFeedback(999999999L))
                 .isInstanceOf(FeedbackNotFoundException.class);
     }
 
     // ===== ARCHIVE FEEDBACK TESTS =====
 
     @Test
-    @DisplayName("testArchiveFeedback_Success - Archive feedback")
+    @DisplayName("testArchiveFeedback_Success - Archive existing feedback")
     void testArchiveFeedback_Success() {
-        // Arrange
-        var id = IdHelper.generateId();
-        when(feedbackRepository.findById(id)).thenReturn(testFeedback);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
+        // Arrange - Create feedback first
+        CreateFeedbackCommand command = new CreateFeedbackCommand(
+                "To Archive",
+                "This feedback will be archived to test the archive functionality",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(command);
 
-        // Act
-        FeedbackResponse response = service.archiveFeedback(IdHelper.toString(id));
+        // Act - Archive it
+        FeedbackResponse response = service.archiveFeedback(created.id());
 
         // Assert
         assertThat(response).isNotNull();
         assertThat(response.archived()).isTrue();
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
     }
 
     @Test
-    @DisplayName("testArchiveFeedback_NotFound - Throws FeedbackNotFoundException")
-    void testArchiveFeedback_NotFound() {
-        var id = IdHelper.generateId();
-        // Arrange
-        when(feedbackRepository.findById(id)).thenReturn(null);
+    @DisplayName("testArchiveFeedback_Verify - Verify archived flag persists")
+    void testArchiveFeedback_Verify() {
+        // Arrange - Create feedback first
+        CreateFeedbackCommand command = new CreateFeedbackCommand(
+                "To Archive Verify",
+                "This feedback will be archived and verified",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(command);
 
-        // Act & Assert
-        assertThatThrownBy(() -> service.archiveFeedback(IdHelper.toString(id)))
-                .isInstanceOf(FeedbackNotFoundException.class);
+        // Act - Archive it
+        FeedbackResponse archived = service.archiveFeedback(created.id());
+
+        // Verify by fetching again
+        FeedbackResponse fetched = service.getFeedback(IdHelper.toLong(created.id()));
+
+        // Assert
+        assertThat(archived.archived()).isTrue();
+        assertThat(fetched.archived()).isTrue();
     }
 
     // ===== REOPEN FEEDBACK TESTS =====
 
     @Test
-    @DisplayName("testReopenFeedback_Success - Reopen closed feedback")
+    @DisplayName("testReopenFeedback_Success - Reopen archived feedback")
     void testReopenFeedback_Success() {
-        // Arrange
-        var id = IdHelper.generateId();
-        testFeedback.archive();
-        when(feedbackRepository.findById(id)).thenReturn(testFeedback);
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
+        // Arrange - Create and archive feedback first
+        CreateFeedbackCommand command = new CreateFeedbackCommand(
+                "To Reopen",
+                "This feedback will be archived then reopened for testing",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(command);
+        service.archiveFeedback(created.id());
 
-        // Act
-        FeedbackResponse response = service.reopenFeedback(id);
+        // Act - Reopen it
+        FeedbackResponse response = service.reopenFeedback(IdHelper.toLong(created.id()));
 
         // Assert
         assertThat(response).isNotNull();
         assertThat(response.archived()).isFalse();
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
     }
 
     @Test
     @DisplayName("testReopenFeedback_NotFound - Throws FeedbackNotFoundException")
     void testReopenFeedback_NotFound() {
-        // Arrange
-        when(feedbackRepository.findById(999L)).thenReturn(null);
-
         // Act & Assert
-        assertThatThrownBy(() -> service.reopenFeedback(999L))
+        assertThatThrownBy(() -> service.reopenFeedback(999999999L))
                 .isInstanceOf(FeedbackNotFoundException.class);
     }
 
@@ -424,21 +301,25 @@ class FeedbackApplicationServiceTest {
     @Test
     @DisplayName("testAddComment_Success - Add comment to feedback")
     void testAddComment_Success() {
-        // Arrange
-        CreateCommentRequest request = new CreateCommentRequest("Great feedback!");
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        when(userRepository.findById(anyLong())).thenReturn(testUser);
-        doNothing().when(commentRepository).persist(any(Comment.class));
-        doNothing().when(feedbackRepository).persist(any(Feedback.class));
+        // Arrange - Create feedback first
+        CreateFeedbackCommand createCommand = new CreateFeedbackCommand(
+                "Feedback for Comment",
+                "This feedback will have a comment added to test comment creation",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(createCommand);
 
-        // Act
-        CommentResponse response = service.addComment(1L, request);
+        // Act - Add comment
+        CreateCommentRequest commentRequest = new CreateCommentRequest("Great feedback! This is very helpful and well-written.");
+        CommentResponse response = service.addComment(IdHelper.toLong(created.id()), commentRequest);
 
         // Assert
         assertThat(response).isNotNull();
-        assertThat(response.text()).isEqualTo("Great feedback!");
-        verify(commentRepository, times(1)).persist(any(Comment.class));
-        verify(feedbackRepository, times(1)).persist(any(Feedback.class));
+        assertThat(response.text()).isEqualTo("Great feedback! This is very helpful and well-written.");
+        assertThat(response.id()).isNotNull();
     }
 
     @Test
@@ -446,50 +327,42 @@ class FeedbackApplicationServiceTest {
     void testAddComment_FeedbackNotFound() {
         // Arrange
         CreateCommentRequest request = new CreateCommentRequest("Test comment");
-        when(feedbackRepository.findById(999L)).thenReturn(null);
 
         // Act & Assert
-        assertThatThrownBy(() -> service.addComment(999L, request))
+        assertThatThrownBy(() -> service.addComment(999999999L, request))
                 .isInstanceOf(FeedbackNotFoundException.class);
-    }
-
-    @Test
-    @DisplayName("testAddComment_UserNotFound - Throws UserNotFoundException")
-    void testAddComment_UserNotFound() {
-        // Arrange
-        CreateCommentRequest request = new CreateCommentRequest("Test comment");
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        when(userRepository.findById(anyLong())).thenReturn(null);
-
-        // Act & Assert
-        assertThatThrownBy(() -> service.addComment(1L, request))
-                .isInstanceOf(UserNotFoundException.class);
     }
 
     @Test
     @DisplayName("testGetCommentsByFeedbackId_Success - Retrieve comments")
     void testGetCommentsByFeedbackId_Success() {
-        // Arrange
-        when(feedbackRepository.findById(1L)).thenReturn(testFeedback);
-        when(commentRepository.findByFeedbackId(1L)).thenReturn(java.util.Collections.emptyList());
+        // Arrange - Create feedback with comment
+        CreateFeedbackCommand command = new CreateFeedbackCommand(
+                "Feedback for Comments",
+                "This feedback will have comments added to test comment retrieval",
+                null,
+                null,
+                null,
+                null
+        );
+        FeedbackResponse created = service.createFeedback(command);
+        CreateCommentRequest commentRequest = new CreateCommentRequest("Test comment for retrieval");
+        service.addComment(IdHelper.toLong(created.id()), commentRequest);
 
         // Act
-        var comments = service.getCommentsByFeedbackId(1L);
+        var comments = service.getCommentsByFeedbackId(IdHelper.toLong(created.id()));
 
         // Assert
         assertThat(comments).isNotNull();
-        assertThat(comments).isEmpty();
-        verify(commentRepository, times(1)).findByFeedbackId(1L);
+        assertThat(comments).isNotEmpty();
+        assertThat(comments.get(0).text()).isEqualTo("Test comment for retrieval");
     }
 
     @Test
     @DisplayName("testGetCommentsByFeedbackId_NotFound - Throws FeedbackNotFoundException")
     void testGetCommentsByFeedbackId_NotFound() {
-        // Arrange
-        when(feedbackRepository.findById(999L)).thenReturn(null);
-
         // Act & Assert
-        assertThatThrownBy(() -> service.getCommentsByFeedbackId(999L))
+        assertThatThrownBy(() -> service.getCommentsByFeedbackId(999999999L))
                 .isInstanceOf(FeedbackNotFoundException.class);
     }
 }

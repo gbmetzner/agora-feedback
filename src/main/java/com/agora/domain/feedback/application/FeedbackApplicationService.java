@@ -5,6 +5,7 @@ import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
 import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.CategoryNotFoundException;
 import com.agora.domain.feedback.exception.FeedbackNotFoundException;
+import com.agora.domain.feedback.exception.UnauthorizedException;
 import com.agora.domain.feedback.model.dto.CommentAuthorResponse;
 import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
@@ -118,6 +119,72 @@ public class FeedbackApplicationService {
         Feedback feedback = feedbackRepository.findById(id);
         if (feedback == null) {
             throw new FeedbackNotFoundException(id);
+        }
+
+        feedback.setTitle(command.title());
+        feedback.setDescription(command.description());
+        feedback.setStatus(command.status());
+
+        if (command.categoryId() != null) {
+            FeedbackCategory category = categoryRepository.findById(command.categoryId());
+            if (category == null) {
+                throw new CategoryNotFoundException(command.categoryId());
+            }
+            feedback.setCategory(category);
+        } else {
+            feedback.setCategory(null);
+        }
+
+        if (command.authorId() != null) {
+            User author = userRepository.findById(command.authorId());
+            if (author == null) {
+                throw new UserNotFoundException(command.authorId());
+            }
+            feedback.setAuthor(author);
+        } else {
+            feedback.setAuthor(null);
+        }
+
+        feedback.setSentiment(command.sentiment());
+        feedback.setTags(command.tags());
+
+        feedbackRepository.persist(feedback);
+        return toResponse(feedback);
+    }
+
+    /**
+     * Updates feedback with authorization check.
+     * <p>
+     * Only allows the creator of the feedback or an admin user to update it.
+     * </p>
+     *
+     * @param id The feedback ID to update
+     * @param command The update command with new values
+     * @param currentUserId The ID of the user attempting the update
+     * @return FeedbackResponse containing the updated feedback details
+     * @throws FeedbackNotFoundException if feedback does not exist
+     * @throws UnauthorizedException if the current user is not the author and not an admin
+     * @throws CategoryNotFoundException if specified category does not exist
+     * @throws UserNotFoundException if specified author does not exist
+     */
+    @Transactional
+    public FeedbackResponse updateFeedback(@NotNull Long id, @Valid @NotNull UpdateFeedbackCommand command, @NotNull Long currentUserId) {
+        Feedback feedback = feedbackRepository.findById(id);
+        if (feedback == null) {
+            throw new FeedbackNotFoundException(id);
+        }
+
+        // Check authorization: only author or admin can update
+        User currentUser = userRepository.findById(currentUserId);
+        if (currentUser == null) {
+            throw new UserNotFoundException(currentUserId);
+        }
+
+        boolean isAuthor = feedback.getAuthor() != null && feedback.getAuthor().getId().equals(currentUserId);
+        boolean isAdmin = currentUser.role != null && currentUser.role.isAdmin();
+
+        if (!isAuthor && !isAdmin) {
+            throw new UnauthorizedException("Only the feedback author or an admin can update this feedback");
         }
 
         feedback.setTitle(command.title());

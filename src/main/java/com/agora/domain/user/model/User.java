@@ -38,6 +38,10 @@ public class User extends PanacheEntityBase {
     @Column(name = "avatar_url")
     public String avatarUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    public Role role = Role.USER;
+
     @Column(name = "created_at", nullable = false)
     public LocalDateTime createdAt;
 

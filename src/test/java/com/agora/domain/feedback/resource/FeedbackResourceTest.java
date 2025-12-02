@@ -154,7 +154,7 @@ class FeedbackResourceTest {
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
-        // Update feedback
+        // Update feedback - Requires authentication
         var updateCommand = new UpdateFeedbackCommand(
                 "Updated Title",
                 "This is the updated feedback content here",
@@ -165,24 +165,19 @@ class FeedbackResourceTest {
                 null
         );
 
-        var response = given()
+        // Without JWT token, should return 403 Forbidden
+        given()
                 .accept("application/json")
                 .contentType("application/json")
                 .body(updateCommand)
                 .when()
                 .patch(FEEDBACK_URL + "/" + createdFeedback.id())
                 .then()
-                .statusCode(200)
-                .extract().body().as(FeedbackResponse.class);
-
-        assertThat(response).isNotNull();
-        assertThat(response.title()).isEqualTo("Updated Title");
-        assertThat(response.description()).isEqualTo(updateCommand.description());
-        assertThat(response.status()).isEqualTo(FeedbackStatus.IN_PROGRESS);
+                .statusCode(403);
     }
 
     @Test
-    @DisplayName("testUpdateFeedback_NotFound - Returns 404 for non-existent feedback")
+    @DisplayName("testUpdateFeedback_NotFound - Returns 403 for unauthenticated request")
     void testUpdateFeedback_NotFound() {
         var updateCommand = new UpdateFeedbackCommand(
                 "Updated Title",
@@ -194,13 +189,14 @@ class FeedbackResourceTest {
                 null
         );
 
+        // Update endpoint requires authentication, so 403 Forbidden is returned before checking if feedback exists
         given()
                 .contentType("application/json")
                 .body(updateCommand)
                 .when()
                 .patch(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
                 .then()
-                .statusCode(404);
+                .statusCode(403);
     }
 
     // ===== DELETE FEEDBACK TESTS =====

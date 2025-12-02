@@ -4,6 +4,7 @@ import com.agora.domain.feedback.application.FeedbackApplicationService;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
 import com.agora.domain.feedback.common.IdHelper;
+import com.agora.domain.feedback.exception.UnauthorizedException;
 import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
@@ -12,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -25,14 +27,15 @@ import org.jboss.logging.Logger;
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
 public class FeedbackResource {
 
-
     private static final Logger LOGGER = Logger.getLogger(FeedbackResource.class);
 
     private final FeedbackApplicationService feedbackApplicationService;
+    private final JsonWebToken jwt;
 
     @Inject
-    public FeedbackResource(FeedbackApplicationService feedbackApplicationService) {
+    public FeedbackResource(FeedbackApplicationService feedbackApplicationService, JsonWebToken jwt) {
         this.feedbackApplicationService = feedbackApplicationService;
+        this.jwt = jwt;
     }
 
     @GET
@@ -167,7 +170,19 @@ public class FeedbackResource {
             @PathParam("id") String id,
             @Parameter(description = "Updated feedback data", required = true)
             UpdateFeedbackCommand command) {
-        FeedbackResponse response = feedbackApplicationService.updateFeedback(IdHelper.toLong(id), command);
+        // Require authentication
+        if (jwt == null || jwt.getSubject() == null) {
+            throw new UnauthorizedException("Authentication required to update feedback");
+        }
+
+        // Extract current user ID from JWT token
+        Long currentUserId = Long.parseLong(jwt.getSubject());
+
+        FeedbackResponse response = feedbackApplicationService.updateFeedback(
+            IdHelper.toLong(id),
+            command,
+            currentUserId
+        );
         return Response.ok(response).build();
     }
 

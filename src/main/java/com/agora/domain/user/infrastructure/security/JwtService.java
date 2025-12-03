@@ -17,6 +17,7 @@ public class JwtService {
      */
     public String generateToken(String userId, String username, String email) {
         return Jwt
+                .issuer("agora.feedback")
                 .subject(userId)
                 .claim("username", username)
                 .claim("email", email)
@@ -31,6 +32,7 @@ public class JwtService {
      */
     public String generateToken(UUID userId, String username, String email, Duration expiration) {
         return Jwt
+                .issuer("agora.feedback")
                 .subject(userId.toString())
                 .claim("username", username)
                 .claim("email", email)

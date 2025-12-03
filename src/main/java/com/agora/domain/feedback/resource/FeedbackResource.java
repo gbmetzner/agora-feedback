@@ -9,6 +9,9 @@ import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
+import com.agora.domain.feedback.model.dto.VoteRequest;
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -23,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
-@Path("/v1/api/feedback")
+@Path("/api/v1/feedback")
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
 public class FeedbackResource {
 
@@ -102,7 +105,7 @@ public class FeedbackResource {
     @POST
     @Operation(
             summary = "Submit new feedback",
-            description = "Create a new feedback item. Note: The OpenAPI spec uses PATCH for updates, but this implementation uses PUT."
+            description = "Create a new feedback item"
     )
     @APIResponses({
             @APIResponse(
@@ -116,10 +119,6 @@ public class FeedbackResource {
             @APIResponse(
                     responseCode = "400",
                     description = "Invalid request - validation errors"
-            ),
-            @APIResponse(
-                    responseCode = "401",
-                    description = "Not authenticated"
             )
     })
     @Produces(MediaType.APPLICATION_JSON)
@@ -135,7 +134,7 @@ public class FeedbackResource {
     @Path("/{id}")
     @Operation(
             summary = "Update feedback",
-            description = "Update an existing feedback item (author or admin only). Note: OpenAPI spec specifies PATCH, but this uses PUT."
+            description = "Update an existing feedback item. Only the feedback author or an admin can update. Requires authentication via JWT token."
     )
     @APIResponses({
             @APIResponse(
@@ -151,12 +150,8 @@ public class FeedbackResource {
                     description = "Invalid request - validation errors"
             ),
             @APIResponse(
-                    responseCode = "401",
-                    description = "Not authenticated"
-            ),
-            @APIResponse(
                     responseCode = "403",
-                    description = "Insufficient permissions"
+                    description = "Forbidden - either not authenticated or user lacks permission to update this feedback"
             ),
             @APIResponse(
                     responseCode = "404",
@@ -190,20 +185,12 @@ public class FeedbackResource {
     @Path("/{id}")
     @Operation(
             summary = "Delete feedback",
-            description = "Delete a feedback item (author or admin only)"
+            description = "Delete a feedback item by ID"
     )
     @APIResponses({
             @APIResponse(
                     responseCode = "204",
                     description = "Feedback deleted successfully"
-            ),
-            @APIResponse(
-                    responseCode = "401",
-                    description = "Not authenticated"
-            ),
-            @APIResponse(
-                    responseCode = "403",
-                    description = "Insufficient permissions"
             ),
             @APIResponse(
                     responseCode = "404",
@@ -222,7 +209,7 @@ public class FeedbackResource {
     @Path("/{id}/archive")
     @Operation(
             summary = "Archive feedback",
-            description = "Mark a feedback item as archived. Note: This endpoint is not part of the official OpenAPI specification."
+            description = "Mark a feedback item as archived, making it inactive without deletion"
     )
     @APIResponses({
             @APIResponse(
@@ -250,7 +237,7 @@ public class FeedbackResource {
     @Path("/{id}/reopen")
     @Operation(
             summary = "Reopen feedback",
-            description = "Reopen a closed feedback item. Note: This endpoint is not part of the official OpenAPI specification."
+            description = "Reopen an archived feedback item, making it active again"
     )
     @APIResponses({
             @APIResponse(
@@ -336,6 +323,83 @@ public class FeedbackResource {
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
+    @POST
+    @Path("/{id}/upvote")
+    @Operation(
+            summary = "Vote on feedback",
+            description = "Upvote, downvote, or remove vote from feedback"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Vote recorded successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = FeedbackResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Invalid vote direction"
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Feedback not found"
+            )
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response voteFeedback(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") String id,
+            @Parameter(description = "Vote data", required = true)
+            VoteRequest request) {
+        FeedbackResponse response = feedbackApplicationService.voteFeedback(
+            IdHelper.toLong(id),
+            request.direction()
+        );
+        return Response.ok(response).build();
+    }
 
+    @POST
+    @Path("/{id}/comments/{commentId}/upvote")
+    @Operation(
+            summary = "Vote on comment",
+            description = "Upvote, downvote, or remove vote from comment"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Vote recorded successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = CommentResponse.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Invalid vote direction"
+            ),
+            @APIResponse(
+                    responseCode = "404",
+                    description = "Comment or feedback not found"
+            )
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response voteComment(
+            @Parameter(description = "Feedback ID", required = true)
+            @PathParam("id") String id,
+            @Parameter(description = "Comment ID", required = true)
+            @PathParam("commentId") String commentId,
+            @Parameter(description = "Vote data", required = true)
+            VoteRequest request) {
+        CommentResponse response = feedbackApplicationService.voteComment(
+            IdHelper.toLong(id),
+            IdHelper.toLong(commentId),
+            request.direction()
+        );
+        return Response.ok(response).build();
+    }
 
 }

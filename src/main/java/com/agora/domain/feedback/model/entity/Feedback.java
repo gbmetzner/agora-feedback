@@ -99,4 +99,40 @@ public class Feedback extends PanacheEntityBase {
     public void changeSentiment(String newSentiment) {
         this.sentiment = newSentiment;
     }
+
+    /**
+     * Record an upvote on this feedback.
+     * Increments the upvotes counter.
+     */
+    public void upvote() {
+        this.upvotes++;
+    }
+
+    /**
+     * Remove an upvote from this feedback.
+     * Decrements the upvotes counter, minimum 0.
+     */
+    public void removeUpvote() {
+        if (this.upvotes > 0) {
+            this.upvotes--;
+        }
+    }
+
+    /**
+     * Record a downvote on this feedback.
+     * Increments the downvotes counter.
+     */
+    public void downvote() {
+        this.downvotes++;
+    }
+
+    /**
+     * Remove a downvote from this feedback.
+     * Decrements the downvotes counter, minimum 0.
+     */
+    public void removeDownvote() {
+        if (this.downvotes > 0) {
+            this.downvotes--;
+        }
+    }
 }

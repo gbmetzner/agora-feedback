@@ -67,4 +67,22 @@ public class Comment extends PanacheEntityBase {
     public void preUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
+
+    /**
+     * Record an upvote on this comment.
+     * Increments the upvotes counter.
+     */
+    public void upvote() {
+        this.upvotes++;
+    }
+
+    /**
+     * Remove an upvote from this comment.
+     * Decrements the upvotes counter, minimum 0.
+     */
+    public void removeUpvote() {
+        if (this.upvotes > 0) {
+            this.upvotes--;
+        }
+    }
 }

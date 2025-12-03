@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("FeedbackResource Tests")
 class FeedbackResourceTest {
 
-    private static final String FEEDBACK_URL = "/v1/api/feedback";
+    private static final String FEEDBACK_URL = "/api/v1/feedback";
     private static final String INVALID_FEEDBACK_ID = IdHelper.toString(117457749108987300L);
 
     // ===== LIST AND RETRIEVE TESTS =====
@@ -630,7 +630,7 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_WithPagination - Test page and pageSize parameters")
     void testListAll_WithPagination() {
         var response = given()
-                .queryParam("page", 1)
+.queryParam("page", 1)
                 .queryParam("pageSize", 5)
                 .when().get(FEEDBACK_URL)
                 .then()
@@ -646,7 +646,7 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_SortByOldest - Test sortBy=oldest parameter")
     void testListAll_SortByOldest() {
         var response = given()
-                .queryParam("sortBy", "oldest")
+.queryParam("sortBy", "oldest")
                 .when().get(FEEDBACK_URL)
                 .then()
                 .statusCode(200)
@@ -660,7 +660,7 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_SortByNewest - Test sortBy=newest (default)")
     void testListAll_SortByNewest() {
         var response = given()
-                .queryParam("sortBy", "newest")
+.queryParam("sortBy", "newest")
                 .when().get(FEEDBACK_URL)
                 .then()
                 .statusCode(200)
@@ -673,7 +673,8 @@ class FeedbackResourceTest {
     @Test
     @DisplayName("testListAll_InvalidPageNumber - Verify defaults to page 1")
     void testListAll_InvalidPageNumber() {
-        var response = given().accept("application/json")
+        var response = given()
+.accept("application/json")
                 .contentType("application/json")
                 .queryParam("page", -1)
                 .when().get(FEEDBACK_URL)
@@ -690,7 +691,7 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_ExcessivePageSize - Verify capped at 100")
     void testListAll_ExcessivePageSize() {
         var response = given()
-                .accept("application/json")
+.accept("application/json")
                 .contentType("application/json")
                 .queryParam("pageSize", 500)
                 .when().get(FEEDBACK_URL)

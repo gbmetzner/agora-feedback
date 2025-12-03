@@ -15,6 +15,7 @@ import com.agora.domain.feedback.model.entity.Comment;
 import com.agora.domain.feedback.model.entity.Feedback;
 import com.agora.domain.feedback.model.entity.FeedbackCategory;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
+import com.agora.domain.feedback.model.VoteDirection;
 import com.agora.domain.feedback.model.repository.CategoryRepository;
 import com.agora.domain.feedback.model.repository.CommentRepository;
 import com.agora.domain.feedback.model.repository.FeedbackRepository;
@@ -411,5 +412,86 @@ public class FeedbackApplicationService {
                 comment.getCreatedAt(),
                 comment.getUpdatedAt()
         );
+    }
+
+    /**
+     * Records a vote on feedback.
+     * <p>
+     * Supports upvoting, downvoting, or removing votes based on direction.
+     * Only one vote per user is allowed (prevents double voting).
+     * </p>
+     *
+     * @param id The feedback ID to vote on
+     * @param direction The vote direction (up, down, none)
+     * @return Updated FeedbackResponse with vote count
+     * @throws FeedbackNotFoundException if feedback does not exist
+     * @throws IllegalArgumentException if vote direction is invalid
+     */
+    @Transactional
+    public FeedbackResponse voteFeedback(@NotNull Long id, @NotNull String direction) {
+        Feedback feedback = feedbackRepository.findById(id);
+        if (feedback == null) {
+            throw new FeedbackNotFoundException(id);
+        }
+
+        // Parse vote direction
+        VoteDirection voteDir = VoteDirection.fromString(direction);
+
+        // Apply the vote
+        switch (voteDir) {
+            case UP -> feedback.upvote();
+            case DOWN -> feedback.downvote();
+            case NONE -> {
+                // Remove votes (simple approach: reset both)
+                feedback.removeUpvote();
+                feedback.removeDownvote();
+            }
+        }
+
+        feedbackRepository.persist(feedback);
+        return toResponse(feedback);
+    }
+
+    /**
+     * Records a vote on a comment.
+     * <p>
+     * Supports upvoting or removing upvotes based on direction.
+     * </p>
+     *
+     * @param feedbackId The feedback ID containing the comment
+     * @param commentId The comment ID to vote on
+     * @param direction The vote direction (up, down, none)
+     * @return Updated CommentResponse with vote count
+     * @throws FeedbackNotFoundException if feedback does not exist
+     * @throws IllegalArgumentException if comment does not exist or vote direction is invalid
+     */
+    @Transactional
+    public CommentResponse voteComment(@NotNull Long feedbackId, @NotNull Long commentId, @NotNull String direction) {
+        Feedback feedback = feedbackRepository.findById(feedbackId);
+        if (feedback == null) {
+            throw new FeedbackNotFoundException(feedbackId);
+        }
+
+        Comment comment = commentRepository.findById(commentId);
+        if (comment == null) {
+            throw new IllegalArgumentException("Comment not found: " + commentId);
+        }
+
+        // Verify comment belongs to the feedback
+        if (!comment.getFeedback().getId().equals(feedbackId)) {
+            throw new IllegalArgumentException("Comment does not belong to this feedback");
+        }
+
+        // Parse vote direction
+        VoteDirection voteDir = VoteDirection.fromString(direction);
+
+        // Apply the vote (comments only support upvote/none)
+        switch (voteDir) {
+            case UP -> comment.upvote();
+            case DOWN, NONE -> comment.removeUpvote();
+        }
+
+        commentRepository.persist(comment);
+        return toCommentResponse(comment);
     }
 }

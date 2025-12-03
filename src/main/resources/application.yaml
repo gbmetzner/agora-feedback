@@ -6,8 +6,6 @@ quarkus:
     username: ${quarkus.datasource.username}
     password: ${quarkus.datasource.password}
   rest-client:
-    log-formatted-body: true
-    log-body: true
     logging:
       scope: request-response
 
@@ -46,6 +44,8 @@ smallrye:
       db-kind: postgresql
       username: postgres
       password: agora
+      jdbc:
+        url: jdbc:postgresql://localhost:5432/agora_feedback
       devservices:
         image-name: postgres:16.2-alpine
         show-logs: true
@@ -58,7 +58,7 @@ smallrye:
         methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
         headers: Authorization, Content-Type
         exposed-headers: Authorization, Content-Type
-        origins: ["http://localhost:8081","http://localhost:8082"]
+        origins: ["http://localhost:3000"]
         access-control-max-age: 86400
 
 'test%':

@@ -1,577 +1,301 @@
-openapi: 3.0.0
-info:
-  title: AGORA Simcluster Feedback Hub API
-  description: Backend API for the community feedback management platform
-  version: 1.0.0
-  contact:
-    name: Agora Team
-
-servers:
-  - url: http://localhost:3001/api
-    description: Local development server
-  - url: https://api.agora.example.com/api
-    description: Production server
-
-tags:
-  - name: Authentication
-    description: User authentication and session management
-  - name: Feedback
-    description: Feedback submission, retrieval, and management
-  - name: Comments
-    description: Comments on feedback items
-  - name: Users
-    description: User profiles and statistics
-  - name: Communities
-    description: Community management and discovery
-  - name: Reports
-    description: Player behavior reports and moderation
-
+---
+openapi: 3.1.0
 components:
   schemas:
-    # ========== Common Schemas ==========
-    Error:
+    CommentAuthorResponse:
       type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: string
-          description: Error code identifier
-        message:
-          type: string
-          description: Human-readable error message
-        details:
-          type: object
-          description: Additional error details
-
-    PaginatedResponse:
-      type: object
-      required:
-        - data
-        - total
-        - page
-        - pageSize
-      properties:
-        data:
-          type: array
-          items: {}
-        total:
-          type: integer
-          description: Total number of items
-        page:
-          type: integer
-          description: Current page number (1-indexed)
-        pageSize:
-          type: integer
-          description: Number of items per page
-
-    # ========== Authentication Schemas ==========
-    AuthRequest:
-      type: object
-      required:
-        - provider
-      properties:
-        provider:
-          type: string
-          enum: [simcluster, discord]
-          description: OAuth provider to authenticate with
-
-    AuthResponse:
-      type: object
-      required:
-        - token
-        - refreshToken
-        - user
-      properties:
-        token:
-          type: string
-          description: JWT access token
-        refreshToken:
-          type: string
-          description: Token to refresh the access token
-        user:
-          $ref: '#/components/schemas/User'
-
-    RefreshTokenRequest:
-      type: object
-      required:
-        - refreshToken
-      properties:
-        refreshToken:
-          type: string
-          description: Refresh token to exchange for new access token
-
-    # ========== User Schemas ==========
-    User:
-      type: object
-      required:
-        - id
-        - username
-        - xp
-        - clout
-        - rank
+      examples:
+        - id: user-1
+          username: PlayerOne
+      description: Author information for a comment
       properties:
         id:
           type: string
-          description: Unique user identifier
+          examples:
+            - user-1
+          description: Unique author identifier
         username:
           type: string
-          description: User's display name
-        email:
-          type: string
-          format: email
-          description: User's email address
-        avatar:
-          type: string
-          format: uri
-          description: URL to user's avatar image
-        bio:
-          type: string
-          description: User's biography
-        xp:
-          type: integer
-          description: Total experience points
-        xpToNextLevel:
-          type: integer
-          description: XP needed to reach next level
-        clout:
-          type: integer
-          description: User's clout score (community reputation)
-        rank:
-          type: integer
-          description: User's numerical rank
-        totalFeedback:
-          type: integer
-          description: Total feedback items submitted
-        totalComments:
-          type: integer
-          description: Total comments made
-        achievements:
-          type: array
-          items:
-            $ref: '#/components/schemas/Achievement'
-        isDeveloper:
-          type: boolean
-          description: Whether user is a developer with special permissions
-        createdAt:
-          type: string
-          format: date-time
-          description: Account creation timestamp
-
-    Achievement:
+          examples:
+            - PlayerOne
+          description: Author username
+    CommentResponse:
       type: object
-      required:
-        - id
-        - name
-        - icon
-        - earned
+      examples:
+        - id: "117457749108987475"
+          author:
+            id: user-1
+            username: PlayerOne
+          content: Great feedback!
+          isDeveloperResponse: false
+          upvotes: 5
+          createdAt: 2024-01-15T10:30:00Z
+          updatedAt: 2024-01-15T10:30:00Z
+      description: Feedback comment details response
       properties:
         id:
           type: string
-          description: Unique achievement identifier
-        name:
-          type: string
-          description: Achievement display name
-        description:
-          type: string
-          description: Achievement description
-        icon:
-          type: string
-          format: uri
-          description: URL to achievement icon
-        earned:
-          type: boolean
-          description: Whether user has earned this achievement
-        earnedAt:
-          type: string
-          format: date-time
-          description: Timestamp when achievement was earned (if applicable)
-
-    UserActivity:
-      type: object
-      required:
-        - id
-        - type
-        - title
-        - xp
-        - date
-      properties:
-        id:
-          type: string
-          description: Unique activity identifier
-        type:
-          type: string
-          enum: [feedback, comment, upvote, achievement]
-          description: Type of activity
-        title:
-          type: string
-          description: Activity description
-        xp:
-          type: integer
-          description: XP earned from this activity
-        date:
-          type: string
-          format: date-time
-          description: When the activity occurred
-
-    UserProfile:
-      allOf:
-        - $ref: '#/components/schemas/User'
-        - type: object
-          properties:
-            activity:
-              type: array
-              items:
-                $ref: '#/components/schemas/UserActivity'
-              description: Recent user activity (newest first)
-
-    # ========== Feedback Schemas ==========
-    Feedback:
-      type: object
-      required:
-        - id
-        - title
-        - description
-        - author
-        - status
-        - category
-        - sentiment
-        - upvotes
-        - commentCount
-        - createdAt
-      properties:
-        id:
-          type: string
-          description: Unique feedback identifier
-        title:
-          type: string
-          description: Feedback title
-        description:
-          type: string
-          description: Detailed feedback description
-        author:
-          $ref: '#/components/schemas/User'
-        status:
-          type: string
-          enum: [pending, acknowledged, in-progress, completed]
-          description: Current feedback status
-        category:
-          type: string
-          enum: [Feature, Bug, QoL, Balance]
-          description: Feedback category
-        sentiment:
-          type: string
-          enum: [positive, neutral, negative]
-          description: Sentiment classification
-        tags:
-          type: array
-          items:
-            type: string
-          description: Optional tags for categorization
-        upvotes:
-          type: integer
-          description: Total upvotes received
-        downvotes:
-          type: integer
-          description: Total downvotes received
-        commentCount:
-          type: integer
-          description: Total number of comments
-        xpEarned:
-          type: integer
-          description: XP earned from this feedback
-        createdAt:
-          type: string
-          format: date-time
-          description: When feedback was created
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last update timestamp
-        developmentResponse:
-          type: string
-          description: Optional developer response to the feedback
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment'
-          description: Attached media/files
-
-    FeedbackCreateRequest:
-      type: object
-      required:
-        - title
-        - description
-        - category
-      properties:
-        title:
-          type: string
-          minLength: 5
-          maxLength: 200
-          description: Feedback title
-        description:
-          type: string
-          minLength: 10
-          maxLength: 5000
-          description: Detailed description
-        category:
-          type: string
-          enum: [Feature, Bug, QoL, Balance]
-          description: Feedback category
-        tags:
-          type: array
-          items:
-            type: string
-          maxItems: 5
-          description: Optional tags
-        attachmentIds:
-          type: array
-          items:
-            type: string
-          description: IDs of pre-uploaded attachments
-
-    FeedbackUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-          minLength: 5
-          maxLength: 200
-        description:
-          type: string
-          minLength: 10
-          maxLength: 5000
-        category:
-          type: string
-          enum: [Feature, Bug, QoL, Balance]
-        tags:
-          type: array
-          items:
-            type: string
-          maxItems: 5
-        status:
-          type: string
-          enum: [pending, acknowledged, in-progress, completed]
-        developmentResponse:
-          type: string
-          maxLength: 2000
-
-    FeedbackListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Feedback'
-
-    # ========== Comment Schemas ==========
-    Comment:
-      type: object
-      required:
-        - id
-        - author
-        - content
-        - createdAt
-      properties:
-        id:
-          type: string
+          examples:
+            - "117457749108987475"
           description: Unique comment identifier
         author:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/CommentAuthorResponse"
+          type: object
+          description: Author information
         content:
           type: string
-          description: Comment text content
+          examples:
+            - Great feedback!
+          description: Comment content text
         isDeveloperResponse:
           type: boolean
+          examples:
+            - false
           description: Whether this is an official developer response
         upvotes:
           type: integer
-          description: Comment upvotes
+          format: int32
+          examples:
+            - 5
+          description: Number of upvotes on this comment
         createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
           type: string
-          format: date-time
-          description: When comment was created
+          examples:
+            - 2024-01-15T10:30:00Z
+          description: Timestamp when comment was created
         updatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
           type: string
-          format: date-time
-          description: Last update timestamp
-
-    CommentCreateRequest:
+          examples:
+            - 2024-01-15T10:30:00Z
+          description: Timestamp when comment was last updated
+    CreateCommentRequest:
       type: object
       required:
-        - content
+        - text
+      examples:
+        - text:
+            Great feedback! This is a valuable feature request that many users have
+            been asking for.
+      description: Request to create a new comment on feedback
       properties:
-        content:
+        text:
           type: string
           minLength: 1
+          examples:
+            - Great feedback! This is a valuable feature request that many users have
+              been asking for.
           maxLength: 5000
-          description: Comment text
-
-    # ========== Community Schemas ==========
-    Community:
+          pattern: \S
+          description: Comment text content
+    CreateFeedbackCommand:
       type: object
       required:
-        - id
-        - name
+        - title
         - description
-        - category
-        - members
-        - topicCount
+      examples:
+        - title: Dark mode support needed
+          description:
+            Users are requesting a dark mode option for better usability
+            in low-light environments. This would reduce eye strain and improve overall
+            user experience.
+          categoryId: 117457749108987394
+          authorId: 117457749108987388
+          sentiment: POSITIVE
+          tags: "ui,accessibility,enhancement"
+      description: Request to create a new feedback item
       properties:
-        id:
+        title:
           type: string
-          description: Unique community identifier
-        name:
-          type: string
-          description: Community display name
+          minLength: 3
+          examples:
+            - Dark mode support needed
+          maxLength: 255
+          pattern: \S
+          description: Feedback title
         description:
           type: string
-          description: Community description
-        icon:
-          type: string
-          format: uri
-          description: URL to community icon/logo
-        category:
-          type: string
-          description: Community category
-        members:
-          type: integer
-          description: Total member count
-        topicCount:
-          type: integer
-          description: Number of topics/feedback items
-        trending:
-          type: boolean
-          description: Whether community is trending
-        createdAt:
-          type: string
-          format: date-time
-          description: Community creation timestamp
-
-    CommunityListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Community'
-
-    # ========== Report Schemas ==========
-    Report:
-      type: object
-      required:
-        - id
-        - reportedUser
-        - reporter
-        - reason
-        - status
-        - createdAt
-      properties:
-        id:
-          type: string
-          description: Unique report identifier
-        reportedUser:
-          $ref: '#/components/schemas/User'
-        reporter:
-          $ref: '#/components/schemas/User'
-        reason:
-          type: string
-          enum: [harassment, cheating, spam, inappropriate, impersonation, other]
-          description: Reason for report
-        description:
-          type: string
-          description: Detailed report description
-        evidence:
-          type: string
-          description: Evidence or additional context
-        status:
-          type: string
-          enum: [open, reviewing, resolved, dismissed]
-          description: Report status
-        moderationNotes:
-          type: string
-          description: Notes from moderators/admins
-        createdAt:
-          type: string
-          format: date-time
-          description: When report was created
-        resolvedAt:
-          type: string
-          format: date-time
-          description: When report was resolved
-
-    ReportCreateRequest:
-      type: object
-      required:
-        - reportedUsername
-        - reason
-      properties:
-        reportedUsername:
-          type: string
-          description: Username of person being reported
-        reason:
-          type: string
-          enum: [harassment, cheating, spam, inappropriate, impersonation, other]
-          description: Reason for report
-        customReason:
-          type: string
-          description: Custom reason if "other" is selected
-        description:
-          type: string
+          minLength: 10
+          examples:
+            - Users are requesting a dark mode option for better usability in low-light
+              environments. This would reduce eye strain and improve overall user experience.
           maxLength: 5000
-          description: Detailed description
-        evidence:
+          pattern: \S
+          description: Detailed feedback description
+        categoryId:
+          type: integer
+          format: int64
+          examples:
+            - 117457749108987394
+          description: Category ID for feedback classification
+        authorId:
+          type: integer
+          format: int64
+          examples:
+            - 117457749108987388
+          description: Author/user ID who submitted the feedback
+        sentiment:
           type: string
-          maxLength: 2000
-          description: Evidence or additional context
-
-    ReportListResponse:
-      allOf:
-        - $ref: '#/components/schemas/PaginatedResponse'
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: '#/components/schemas/Report'
-
-    # ========== Attachment Schemas ==========
-    Attachment:
+          enum:
+            - POSITIVE
+            - NEGATIVE
+            - NEUTRAL
+          examples:
+            - POSITIVE
+          description: Sentiment of the feedback
+        tags:
+          type: string
+          examples:
+            - "ui,accessibility,enhancement"
+          description: Comma-separated tags for categorization
+    FeedbackResponse:
       type: object
-      required:
-        - id
-        - filename
-        - url
-        - type
+      examples:
+        - id: "117457749108987399"
+          title: Dark mode support needed
+          description:
+            Users are requesting a dark mode option for better usability
+            in low-light environments.
+          sentiment: POSITIVE
+          upvotes: 45
+          comments: 8
+          status: ACKNOWLEDGED
+          categoryName: Feature Request
+          authorName: Bob Smith
+          createdAt: 2025-11-20T11:30:00+00:00
+          archived: false
+      description: Feedback item details response
       properties:
         id:
           type: string
-          description: Unique attachment identifier
-        filename:
+          examples:
+            - "117457749108987399"
+          description: Unique feedback identifier
+        title:
           type: string
-          description: Original filename
-        url:
+          examples:
+            - Dark mode support needed
+          description: Feedback title
+        description:
           type: string
-          format: uri
-          description: URL to access the attachment
-        type:
+          examples:
+            - Users are requesting a dark mode option for better usability in low-light
+              environments.
+          description: Detailed feedback description
+        sentiment:
           type: string
-          enum: [image, video, document]
-          description: Type of attachment
-        size:
+          enum:
+            - POSITIVE
+            - NEGATIVE
+            - NEUTRAL
+          examples:
+            - POSITIVE
+          description: Sentiment of the feedback
+        upvotes:
           type: integer
-          description: File size in bytes
-        uploadedAt:
+          format: int32
+          examples:
+            - 45
+          description: Number of upvotes
+        comments:
+          type: integer
+          format: int32
+          examples:
+            - 8
+          description: Number of comments
+        status:
+          $ref: "#/components/schemas/FeedbackStatus"
           type: string
-          format: date-time
-          description: When file was uploaded
-
-    # ========== Vote Schemas ==========
+          enum:
+            - PENDING
+            - ACKNOWLEDGED
+            - IN_PROGRESS
+            - COMPLETED
+          examples:
+            - ACKNOWLEDGED
+          description: Current status of the feedback
+        categoryName:
+          type: string
+          examples:
+            - Feature Request
+          description: Category name for this feedback
+        authorName:
+          type: string
+          examples:
+            - Bob Smith
+          description: Name of the feedback author
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+          type: string
+          examples:
+            - 2025-11-20T11:30:00+00:00
+          description: Timestamp when feedback was created
+        archived:
+          type: boolean
+          examples:
+            - false
+          description: Whether the feedback is archived
+    FeedbackStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACKNOWLEDGED
+        - IN_PROGRESS
+        - COMPLETED
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+        - 2022-03-10T12:15:50-04:00
+    PaginatedFeedbackResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedbackResponse"
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
+    UpdateFeedbackCommand:
+      type: object
+      required:
+        - title
+        - description
+        - status
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 255
+          pattern: \S
+        description:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          pattern: \S
+        status:
+          $ref: "#/components/schemas/FeedbackStatus"
+        categoryId:
+          type: integer
+          format: int64
+        authorId:
+          type: integer
+          format: int64
+        sentiment:
+          type: string
+        tags:
+          type: string
     VoteRequest:
       type: object
       required:
@@ -579,739 +303,1024 @@ components:
       properties:
         direction:
           type: string
-          enum: [up, down, none]
-          description: Vote direction or remove vote with "none"
-
+          enum:
+            - up
+            - down
+            - none
+          examples:
+            - up
+          description: Vote direction (up for upvote, down for downvote, none to remove vote)
+    LoginRequest:
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          enum:
+            - simcluster
+            - discord
+          examples:
+            - discord
+          description: OAuth provider name
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          examples:
+            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT access token
+        refreshToken:
+          type: string
+          examples:
+            - refresh_token_value
+          description: Refresh token for obtaining new JWT
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          examples:
+            - "117457749108987388"
+          description: Unique user identifier
+        username:
+          type: string
+          examples:
+            - PlayerOne
+          description: User username
+        email:
+          type: string
+          examples:
+            - player@example.com
+          description: User email address
+        avatar:
+          type: string
+          examples:
+            - https://example.com/avatar.jpg
+          description: User avatar URL
+        bio:
+          type: string
+          examples:
+            - I love gaming!
+          description: User biography
+        xp:
+          type: integer
+          format: int32
+          examples:
+            - 1500
+          description: User experience points
+        clout:
+          type: integer
+          format: int32
+          examples:
+            - 85
+          description: User clout score
+        rank:
+          type: integer
+          format: int32
+          examples:
+            - 42
+          description: User leaderboard rank
+        totalFeedback:
+          type: integer
+          format: int32
+          examples:
+            - 12
+          description: Total feedback submitted by user
+        totalComments:
+          type: integer
+          format: int32
+          examples:
+            - 45
+          description: Total comments made by user
+        isDeveloper:
+          type: boolean
+          examples:
+            - false
+          description: Whether user is a developer
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+          type: string
+          description: Account creation timestamp
+    PaginatedUserResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
+    UserActivity:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Activity identifier
+        type:
+          type: string
+          enum:
+            - FEEDBACK_CREATED
+            - FEEDBACK_UPDATED
+            - COMMENT_ADDED
+            - FEEDBACK_VOTED
+          description: Type of activity
+        description:
+          type: string
+          description: Activity description
+        timestamp:
+          $ref: "#/components/schemas/OffsetDateTime"
+          type: string
+          description: When activity occurred
+    PaginatedUserActivityResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserActivity"
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
+    Community:
+      type: object
+      properties:
+        id:
+          type: string
+          examples:
+            - "117457749108987394"
+          description: Unique community identifier
+        name:
+          type: string
+          examples:
+            - Feature Requests
+          description: Community name
+        description:
+          type: string
+          examples:
+            - Discuss new feature ideas
+          description: Community description
+        icon:
+          type: string
+          examples:
+            - https://example.com/icon.jpg
+          description: Community icon URL
+        category:
+          type: string
+          examples:
+            - Features
+          description: Community category
+        members:
+          type: integer
+          format: int32
+          examples:
+            - 1250
+          description: Number of community members
+        topicCount:
+          type: integer
+          format: int32
+          examples:
+            - 45
+          description: Number of topics/feedback items
+        trending:
+          type: boolean
+          examples:
+            - true
+          description: Whether community is trending
+    PaginatedCommunityResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Community"
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          examples:
+            - "117457749108987400"
+          description: Unique report identifier
+        reportedUsername:
+          type: string
+          examples:
+            - BadPlayer
+          description: Username of reported player
+        reporterUsername:
+          type: string
+          examples:
+            - GoodPlayer
+          description: Username of player submitting report
+        reason:
+          type: string
+          examples:
+            - HARASSMENT
+          description: Reason for report
+        description:
+          type: string
+          examples:
+            - User was harassing other players in chat
+          description: Detailed report description
+        evidence:
+          type: string
+          examples:
+            - Screenshot of chat conversation
+          description: Evidence supporting the report
+        status:
+          type: string
+          enum:
+            - OPEN
+            - REVIEWING
+            - RESOLVED
+            - DISMISSED
+          examples:
+            - OPEN
+          description: Current status of report
+        moderationNotes:
+          type: string
+          description: Notes from moderation team
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+          type: string
+          description: When report was submitted
+        resolvedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+          type: string
+          description: When report was resolved
+    CreateReportRequest:
+      type: object
+      required:
+        - reportedUsername
+        - reason
+      properties:
+        reportedUsername:
+          type: string
+          examples:
+            - BadPlayer
+          description: Username of player to report
+        reason:
+          type: string
+          enum:
+            - HARASSMENT
+            - CHEATING
+            - SPAM
+            - INAPPROPRIATE
+            - IMPERSONATION
+            - OTHER
+          examples:
+            - HARASSMENT
+          description: Reason for report
+        description:
+          type: string
+          examples:
+            - User was harassing other players in chat
+          description: Detailed description
+        evidence:
+          type: string
+          examples:
+            - Screenshot of chat conversation
+          description: Evidence supporting report
+    UpdateReportRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - OPEN
+            - REVIEWING
+            - RESOLVED
+            - DISMISSED
+          examples:
+            - RESOLVED
+          description: New status for report
+        moderationNotes:
+          type: string
+          description: Notes from moderation team
+    PaginatedReportResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Report"
+        page:
+          type: integer
+          format: int32
+        page_size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT access token
-
-security:
-  - BearerAuth: []
-
+    SecurityScheme:
+      type: openIdConnect
+      description: Authentication
+      openIdConnectUrl: http://localhost:62505/realms/quarkus/.well-known/openid-configuration
+tags:
+  - name: Authentication
+    description: OAuth2 authentication and authorization
+  - name: Feedback
+    description: "Feedback submission, retrieval, and management"
+  - name: Users
+    description: User profiles and leaderboards
+  - name: Communities
+    description: Community management and discovery
+  - name: Reports
+    description: Player behavior reporting and moderation
 paths:
-  # ========== AUTHENTICATION ==========
-  /auth/login:
-    post:
+  /api/v1/auth/discord/callback:
+    get:
+      summary: Discord OAuth2 callback
+      description:
+        Handles Discord OAuth2 callback after user authorization. Exchanges
+        authorization code for JWT token and redirects to frontend.
       tags:
         - Authentication
-      summary: Authenticate with OAuth provider
-      operationId: authLogin
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthRequest'
-      responses:
-        200:
-          description: Successfully authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        400:
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        401:
-          description: Authentication failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/logout:
-    post:
-      tags:
-        - Authentication
-      summary: Logout current user
-      operationId: authLogout
-      responses:
-        200:
-          description: Successfully logged out
-        401:
-          description: Not authenticated
-
-  /auth/refresh:
-    post:
-      tags:
-        - Authentication
-      summary: Refresh access token
-      operationId: authRefresh
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshTokenRequest'
-      responses:
-        200:
-          description: Token refreshed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        401:
-          description: Refresh token invalid or expired
-
-  # ========== USERS ==========
-  /users/me:
-    get:
-      tags:
-        - Users
-      summary: Get current user's profile
-      operationId: getCurrentUser
-      responses:
-        200:
-          description: Current user profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-        401:
-          description: Not authenticated
-
-  /users/{id}:
-    get:
-      tags:
-        - Users
-      summary: Get user profile by ID
-      operationId: getUserProfile
-      security: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: User ID
-      responses:
-        200:
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-        404:
-          description: User not found
-
-  /users/{id}/activity:
-    get:
-      tags:
-        - Users
-      summary: Get user's recent activity
-      operationId: getUserActivity
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: User ID
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        200:
-          description: User activity
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/UserActivity'
-        404:
-          description: User not found
-
-  /users/leaderboard:
-    get:
-      tags:
-        - Users
-      summary: Get user leaderboard
-      operationId: getLeaderboard
-      security: []
-      parameters:
-        - name: sortBy
+        - description: Discord OAuth2 authorization code
+          required: false
+          name: code
           in: query
           schema:
             type: string
-            enum: [xp, clout, rank]
-            default: xp
-        - name: page
+        - description: Error parameter if user denied authorization
+          required: false
+          name: error
           in: query
           schema:
-            type: integer
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 50
+            type: string
       responses:
-        200:
-          description: Leaderboard rankings
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/User'
-
-  # ========== FEEDBACK ==========
-  /feedback:
+        "307":
+          description: Temporary redirect to frontend with JWT token
+        "400":
+          description: Bad Request - missing authorization code
+        "401":
+          description: Unauthorized - user denied authorization or invalid code
+  /api/v1/feedback:
     get:
+      summary: List all feedback items with pagination and sorting
+      description:
+        Retrieve feedback submissions with support for pagination and sorting
+        by creation date
       tags:
         - Feedback
-      summary: List feedback items
-      operationId: listFeedback
-      security: []
       parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [pending, acknowledged, in-progress, completed]
-        - name: category
-          in: query
-          schema:
-            type: string
-            enum: [Feature, Bug, QoL, Balance]
-        - name: sentiment
-          in: query
-          schema:
-            type: string
-            enum: [positive, neutral, negative]
-        - name: sortBy
-          in: query
-          schema:
-            type: string
-            enum: [newest, trending, mostCommented]
-            default: newest
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Search in title and description
-        - name: page
+        - description: "Page number (1-indexed, default 1)"
+          example: 1
+          name: page
           in: query
           schema:
             type: integer
-            default: 1
-        - name: pageSize
+            format: int32
+        - description: "Page size (default 10, max 20)"
+          example: 10
+          name: pageSize
           in: query
           schema:
             type: integer
-            default: 20
+            format: int32
+        - description: "Sort order: 'newest' (default) or 'oldest'"
+          example: newest
+          name: sortBy
+          in: query
+          schema:
+            type: string
       responses:
-        200:
-          description: List of feedback items
+        "200":
+          description: Paginated list of feedback items
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeedbackListResponse'
-
+                $ref: "#/components/schemas/PaginatedFeedbackResponse"
     post:
-      tags:
-        - Feedback
       summary: Submit new feedback
-      operationId: createFeedback
+      description: Create a new feedback item
+      tags:
+        - Feedback
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FeedbackCreateRequest'
+              $ref: "#/components/schemas/CreateFeedbackCommand"
+        required: true
       responses:
-        201:
+        "201":
           description: Feedback created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Feedback'
-        400:
-          description: Invalid request
+                $ref: "#/components/schemas/FeedbackResponse"
+        "400":
+          description: Invalid request - validation errors
+  /api/v1/feedback/{id}:
+    patch:
+      summary: Update feedback
+      description:
+        Update an existing feedback item. Only the feedback author or an
+        admin can update. Requires authentication via JWT token.
+      tags:
+        - Feedback
+      parameters:
+        - description: Feedback ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFeedbackCommand"
+        required: true
+      responses:
+        "200":
+          description: Feedback updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        401:
-          description: Not authenticated
-
-  /feedback/{id}:
+                $ref: "#/components/schemas/FeedbackResponse"
+        "400":
+          description: Invalid request - validation errors
+        "403":
+          description:
+            Forbidden - either not authenticated or user lacks permission
+            to update this feedback
+        "404":
+          description: Feedback not found
     get:
+      summary: Get feedback by ID
+      description: Retrieve a specific feedback item by its ID
       tags:
         - Feedback
-      summary: Get feedback by ID
-      operationId: getFeedback
-      security: []
       parameters:
-        - name: id
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
       responses:
-        200:
+        "200":
           description: Feedback details
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/Feedback'
-                  - type: object
-                    properties:
-                      comments:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Comment'
-        404:
+                $ref: "#/components/schemas/FeedbackResponse"
+        "404":
           description: Feedback not found
-
-    patch:
-      tags:
-        - Feedback
-      summary: Update feedback (author or admin only)
-      operationId: updateFeedback
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedbackUpdateRequest'
-      responses:
-        200:
-          description: Feedback updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Feedback'
-        400:
-          description: Invalid request
-        401:
-          description: Not authenticated
-        403:
-          description: Insufficient permissions
-        404:
-          description: Feedback not found
-
     delete:
+      summary: Delete feedback
+      description: Delete a feedback item by ID
       tags:
         - Feedback
-      summary: Delete feedback (author or admin only)
-      operationId: deleteFeedback
       parameters:
-        - name: id
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
       responses:
-        204:
-          description: Feedback deleted
-        401:
-          description: Not authenticated
-        403:
-          description: Insufficient permissions
-        404:
+        "204":
+          description: Feedback deleted successfully
+        "404":
           description: Feedback not found
-
-  /feedback/{id}/upvote:
+  /api/v1/feedback/{id}/archive:
     post:
+      summary: Archive feedback
+      description: "Mark a feedback item as archived, making it inactive without deletion"
       tags:
         - Feedback
-      summary: Upvote or unvote feedback
-      operationId: voteFeedback
       parameters:
-        - name: id
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VoteRequest'
       responses:
-        200:
-          description: Vote recorded
+        "200":
+          description: Feedback archived successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  upvotes:
-                    type: integer
-                  downvotes:
-                    type: integer
-                  userVote:
-                    type: string
-                    enum: [up, down, none]
-        401:
-          description: Not authenticated
-        404:
+                $ref: "#/components/schemas/FeedbackResponse"
+        "404":
           description: Feedback not found
-
-  # ========== COMMENTS ==========
-  /feedback/{feedbackId}/comments:
+  /api/v1/feedback/{id}/comments:
     get:
-      tags:
-        - Comments
       summary: Get comments for feedback
-      operationId: getComments
-      security: []
-      parameters:
-        - name: feedbackId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        200:
-          description: Comments list
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Comment'
-
-    post:
+      description: Retrieve all comments for a specific feedback item
       tags:
-        - Comments
-      summary: Add comment to feedback
-      operationId: createComment
+        - Feedback
       parameters:
-        - name: feedbackId
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommentCreateRequest'
       responses:
-        201:
-          description: Comment created
+        "200":
+          description: List of comments retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Comment'
-        400:
-          description: Invalid request
-        401:
-          description: Not authenticated
-        404:
+                $ref: "#/components/schemas/CommentResponse"
+        "404":
           description: Feedback not found
-
-  /feedback/{feedbackId}/comments/{commentId}:
-    delete:
+    put:
+      summary: Add comment to feedback
+      description: Add a new comment to an existing feedback item
       tags:
-        - Comments
-      summary: Delete comment
-      operationId: deleteComment
+        - Feedback
       parameters:
-        - name: feedbackId
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
-        - name: commentId
-          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+        required: true
+      responses:
+        "201":
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentResponse"
+        "400":
+          description: Invalid request - validation errors
+        "404":
+          description: Feedback not found
+  /api/v1/feedback/{id}/reopen:
+    post:
+      summary: Reopen feedback
+      description: "Reopen an archived feedback item, making it active again"
+      tags:
+        - Feedback
+      parameters:
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
       responses:
-        204:
-          description: Comment deleted
-        401:
-          description: Not authenticated
-        403:
-          description: Insufficient permissions
-        404:
-          description: Comment not found
-
-  /feedback/{feedbackId}/comments/{commentId}/upvote:
+        "200":
+          description: Feedback reopened successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+        "404":
+          description: Feedback not found
+  /api/v1/feedback/{id}/upvote:
     post:
+      summary: Vote on feedback
+      description: Upvote, downvote, or remove vote from feedback
       tags:
-        - Comments
+        - Feedback
+      parameters:
+        - description: Feedback ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoteRequest"
+        required: true
+      responses:
+        "200":
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+        "400":
+          description: Invalid vote direction
+        "404":
+          description: Feedback not found
+  /api/v1/feedback/{id}/comments/{commentId}/upvote:
+    post:
       summary: Vote on comment
-      operationId: voteComment
+      description: Upvote, downvote, or remove vote from comment
+      tags:
+        - Feedback
       parameters:
-        - name: feedbackId
-          in: path
+        - description: Feedback ID
           required: true
+          name: id
+          in: path
           schema:
             type: string
-        - name: commentId
-          in: path
+        - description: Comment ID
           required: true
+          name: commentId
+          in: path
           schema:
             type: string
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VoteRequest'
+              $ref: "#/components/schemas/VoteRequest"
+        required: true
       responses:
-        200:
-          description: Vote recorded
+        "200":
+          description: Vote recorded successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  upvotes:
-                    type: integer
-                  userVote:
-                    type: string
-                    enum: [up, down, none]
-        401:
-          description: Not authenticated
-        404:
-          description: Comment not found
-
-  # ========== COMMUNITIES ==========
-  /communities:
-    get:
-      tags:
-        - Communities
-      summary: List communities
-      operationId: listCommunities
-      security: []
-      parameters:
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Search by name or description
-        - name: category
-          in: query
-          schema:
-            type: string
-        - name: sortBy
-          in: query
-          schema:
-            type: string
-            enum: [trending, newest, members]
-            default: trending
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        200:
-          description: List of communities
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommunityListResponse'
-
-  /communities/{id}:
-    get:
-      tags:
-        - Communities
-      summary: Get community details
-      operationId: getCommunity
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: Community details
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/Community'
-                  - type: object
-                    properties:
-                      feedback:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Feedback'
-        404:
-          description: Community not found
-
-  # ========== REPORTS ==========
-  /reports:
-    get:
-      tags:
-        - Reports
-      summary: List reports (admin only)
-      operationId: listReports
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [open, reviewing, resolved, dismissed]
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        200:
-          description: List of reports
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportListResponse'
-        401:
-          description: Not authenticated
-        403:
-          description: Not an admin
-
+                $ref: "#/components/schemas/CommentResponse"
+        "400":
+          description: Invalid vote direction
+        "404":
+          description: Comment or feedback not found
+  /api/v1/auth/login:
     post:
+      summary: Login with provider
+      description: Login using OAuth provider (simcluster or discord)
       tags:
-        - Reports
-      summary: Submit a report
-      operationId: createReport
+        - Authentication
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReportCreateRequest'
-      responses:
-        201:
-          description: Report created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Report'
-        400:
-          description: Invalid request
-        401:
-          description: Not authenticated
-
-  /reports/{id}:
-    get:
-      tags:
-        - Reports
-      summary: Get report details (admin only)
-      operationId: getReport
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: Report details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Report'
-        401:
-          description: Not authenticated
-        403:
-          description: Not an admin
-        404:
-          description: Report not found
-
-    patch:
-      tags:
-        - Reports
-      summary: Update report status (admin only)
-      operationId: updateReport
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
+              $ref: "#/components/schemas/LoginRequest"
         required: true
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid provider
+        "401":
+          description: Authentication failed
+  /api/v1/auth/logout:
+    post:
+      summary: Logout user
+      description: Logout and invalidate user session
+      tags:
+        - Authentication
+      responses:
+        "204":
+          description: Logout successful
+        "401":
+          description: Not authenticated
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh JWT token
+      description: Get a new JWT token using refresh token
+      tags:
+        - Authentication
+      requestBody:
         content:
           application/json:
             schema:
               type: object
+              required:
+                - refreshToken
               properties:
-                status:
+                refreshToken:
                   type: string
-                  enum: [open, reviewing, resolved, dismissed]
-                moderationNotes:
-                  type: string
+                  description: Refresh token
       responses:
-        200:
-          description: Report updated
+        "200":
+          description: Token refreshed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Report'
-        401:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid or expired refresh token
+  /api/v1/users/me:
+    get:
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      tags:
+        - Users
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
           description: Not authenticated
-        403:
-          description: Not an admin
-        404:
+  /api/v1/users/{id}:
+    get:
+      summary: Get user profile
+      description: Retrieve a specific user's public profile information
+      tags:
+        - Users
+      parameters:
+        - description: User ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+  /api/v1/users/{id}/activity:
+    get:
+      summary: Get user activity history
+      description: Retrieve user's activity history with pagination
+      tags:
+        - Users
+      parameters:
+        - description: User ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Page number
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: User activity history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUserActivityResponse"
+        "404":
+          description: User not found
+  /api/v1/users/leaderboard:
+    get:
+      summary: Get global leaderboard
+      description: Retrieve global leaderboard rankings with pagination
+      tags:
+        - Users
+      parameters:
+        - description: "Sort by: 'xp', 'clout', or 'rank'"
+          name: sortBy
+          in: query
+          schema:
+            type: string
+        - description: Page number
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Leaderboard rankings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUserResponse"
+  /api/v1/communities:
+    get:
+      summary: List communities
+      description: Retrieve communities with search, filtering, and pagination
+      tags:
+        - Communities
+      parameters:
+        - description: Search query
+          name: search
+          in: query
+          schema:
+            type: string
+        - description: Filter by category
+          name: category
+          in: query
+          schema:
+            type: string
+        - description: "Sort order: 'newest', 'trending', or 'members'"
+          name: sortBy
+          in: query
+          schema:
+            type: string
+        - description: Page number
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: List of communities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCommunityResponse"
+  /api/v1/communities/{id}:
+    get:
+      summary: Get community details
+      description: Retrieve details and feedback items for a specific community
+      tags:
+        - Communities
+      parameters:
+        - description: Community ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Community details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Community"
+        "404":
+          description: Community not found
+  /api/v1/reports:
+    get:
+      summary: List reports
+      description: List all reports (admin only)
+      tags:
+        - Reports
+      parameters:
+        - description: "Filter by status: OPEN, REVIEWING, RESOLVED, DISMISSED"
+          name: status
+          in: query
+          schema:
+            type: string
+        - description: Page number
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReportResponse"
+        "403":
+          description: Forbidden - admin access required
+    post:
+      summary: Submit a report
+      description: Submit a player behavior report
+      tags:
+        - Reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportRequest"
+        required: true
+      responses:
+        "201":
+          description: Report submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "400":
+          description: Invalid request
+        "401":
+          description: Not authenticated
+  /api/v1/reports/{id}:
+    get:
+      summary: Get report details
+      description: Retrieve details of a specific report (admin only)
+      tags:
+        - Reports
+      parameters:
+        - description: Report ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "403":
+          description: Forbidden - admin access required
+        "404":
           description: Report not found
+    patch:
+      summary: Update report status
+      description: Update report status and moderation notes (admin only)
+      tags:
+        - Reports
+      parameters:
+        - description: Report ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReportRequest"
+        required: true
+      responses:
+        "200":
+          description: Report updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "400":
+          description: Invalid request
+        "403":
+          description: Forbidden - admin access required
+        "404":
+          description: Report not found
+info:
+  title: agora-feedback API
+  version: 1.0-SNAPSHOT

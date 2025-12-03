@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("Feedback Workflow Integration Tests")
 class FeedbackWorkflowIntegrationTest {
 
-    private static final String FEEDBACK_URL = "/v1/api/feedback";
+    private static final String FEEDBACK_URL = "/api/v1/feedback";
 
     @Test
     @DisplayName("testCompleteWorkflow_CreateCommentArchive - Full feedback lifecycle")

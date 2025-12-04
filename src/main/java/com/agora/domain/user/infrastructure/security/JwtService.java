@@ -24,7 +24,7 @@ public class JwtService {
                 .claim("email", email)
                 .claim("preferred_username", username)  // Standard JWT claim
                 .groups("user")  // Basic role
-                //.expiresIn(Duration.ofSeconds(durationSeconds))
+                .expiresIn(Duration.ofMinutes(60))
                 .sign();
     }
 

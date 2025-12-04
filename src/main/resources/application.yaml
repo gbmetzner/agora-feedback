@@ -31,7 +31,8 @@ mp:
     verify:
       publickey:
         location: META-INF/resources/jwt-public-key.pem
-      issuer: agora.feedback
+      issuer: "agora.feedback"
+      audience: "agora-feedback-api"
 smallrye:
   jwt:
     sign:

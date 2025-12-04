@@ -2,10 +2,12 @@ package com.agora.domain.user.resource;
 
 import com.agora.domain.auth.DiscordAuthService;
 import com.agora.domain.feedback.resource.FeedbackResource;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -73,6 +75,16 @@ public class AuthResource {
         LOGGER.info("Token: " + authResponse.token);
         var frontendUrl = "http://localhost:3000/auth/callback?token=" + authResponse.token;
         return Response.temporaryRedirect(URI.create(frontendUrl)).build();
+    }
+
+    @Inject
+    JsonWebToken jwt;
+
+    @GET
+    @RolesAllowed("user")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String admin() {
+        return "Access for subject " + jwt.getSubject() + " is granted";
     }
 
 }

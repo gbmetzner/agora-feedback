@@ -8,6 +8,8 @@ quarkus:
   rest-client:
     logging:
       scope: request-response
+  smallrye-jwt:
+    enabled: true
 
 agora:
   feedback:
@@ -30,14 +32,13 @@ mp:
   jwt:
     verify:
       publickey:
-        location: META-INF/resources/jwt-public-key.pem
+        location: publicKey.pem
       issuer: "agora.feedback"
-      audience: "agora-feedback-api"
 smallrye:
   jwt:
     sign:
       key:
-        location: META-INF/resources/jwt-private-key.pem
+        location: privateKey.pem
 
 '%dev':
   quarkus:

@@ -1,6 +1,7 @@
 package com.agora.domain.user.resource;
 
 import com.agora.domain.auth.DiscordAuthService;
+import com.agora.domain.feedback.resource.FeedbackResource;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -10,6 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
 import java.net.URI;
 
@@ -20,6 +22,9 @@ import java.net.URI;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Authentication", description = "OAuth2 authentication and authorization")
 public class AuthResource {
+
+    private static final Logger LOGGER = Logger.getLogger(AuthResource.class);
+
 
     @Inject
     DiscordAuthService authService;
@@ -65,6 +70,7 @@ public class AuthResource {
 
         // Exchange code for JWT
         var authResponse = authService.authenticate(code);
+        LOGGER.info("Token: " + authResponse.token);
         var frontendUrl = "http://localhost:3000/auth/callback?token=" + authResponse.token;
         return Response.temporaryRedirect(URI.create(frontendUrl)).build();
     }

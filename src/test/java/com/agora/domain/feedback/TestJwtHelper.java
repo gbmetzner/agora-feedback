@@ -19,6 +19,7 @@ public class TestJwtHelper {
     public static String generateTestToken(String userId, String username, String email) {
         return Jwt
                 .issuer("agora.feedback")
+                .audience("agora-feedback-api")
                 .subject(userId)
                 .claim("username", username)
                 .claim("email", email)
@@ -39,6 +40,7 @@ public class TestJwtHelper {
     public static String generateTestToken(String userId, String username, String email, Duration expiration) {
         return Jwt
                 .issuer("agora.feedback")
+                .audience("agora-feedback-api")
                 .subject(userId)
                 .claim("username", username)
                 .claim("email", email)

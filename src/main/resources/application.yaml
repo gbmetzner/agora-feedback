@@ -32,13 +32,13 @@ mp:
   jwt:
     verify:
       publickey:
-        location: publicKey.pem
-      issuer: "agora.feedback"
+        location: META-INF/resources/jwt-public-key.pem
+      issuer: agora.feedback
 smallrye:
   jwt:
     sign:
       key:
-        location: privateKey.pem
+        location: META-INF/resources/jwt-private-key.pem
 
 '%dev':
   quarkus:

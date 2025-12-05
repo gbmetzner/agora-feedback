@@ -398,8 +398,7 @@ public class FeedbackApplicationService {
     }
 
     private CommentResponse toCommentResponse(Comment comment) {
-        CommentAuthorResponse author = new CommentAuthorResponse(
-                IdHelper.toString(comment.getAuthor().getId()),
+        CommentAuthorResponse author = new CommentAuthorResponse(IdHelper.toString(comment.getAuthor().getId()),
                 comment.getAuthor().getName()
         );
 

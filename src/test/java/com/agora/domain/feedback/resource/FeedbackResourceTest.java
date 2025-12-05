@@ -8,7 +8,12 @@ import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import com.agora.domain.feedback.model.entity.FeedbackStatus;
+import com.agora.domain.user.infrastructure.security.JwtService;
+import com.agora.domain.user.model.repository.UserRepository;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +34,19 @@ class FeedbackResourceTest {
 
     private static final String FEEDBACK_URL = "/api/v1/feedback";
     private static final String INVALID_FEEDBACK_ID = IdHelper.toString(117457749108987300L);
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    @Inject
+    UserRepository userRepository;
+    private String AUTHORIZATION_TOKEN = "Bearer ";
+    private final JwtService jwtService = new JwtService();
+
+    @BeforeEach
+    public void beforeEach() {
+        RestAssured.basePath = "/api/v1/feedback";
+        var user = userRepository.find("id",117457749108987388L).firstResult();
+       AUTHORIZATION_TOKEN += jwtService.generateToken(user);
+    }
+
 
     // ===== LIST AND RETRIEVE TESTS =====
 
@@ -36,7 +54,9 @@ class FeedbackResourceTest {
     @DisplayName("testListAllFeedbacks - Retrieve paginated feedbacks")
     void testListAllFeedbacks() {
         var response = given()
-                .when().get(FEEDBACK_URL)
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);
@@ -53,7 +73,9 @@ class FeedbackResourceTest {
     void testGetNonExistentFeedback() {
         // Use a numerically valid but non-existent ID (large TSID value)
         given()
-                .when().get(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get(INVALID_FEEDBACK_ID)
                 .then()
                 .statusCode(404);
     }
@@ -74,8 +96,9 @@ class FeedbackResourceTest {
 
         var response = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -104,8 +127,9 @@ class FeedbackResourceTest {
 
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(400)
                 .body("message", org.hamcrest.CoreMatchers.is("Validation failed"));
@@ -125,8 +149,9 @@ class FeedbackResourceTest {
 
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(400);
     }
@@ -148,8 +173,9 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(createCommand)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -165,13 +191,13 @@ class FeedbackResourceTest {
                 null
         );
 
-        // Without JWT token, should return 403 Forbidden
         given()
                 .accept("application/json")
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(updateCommand)
                 .when()
-                .patch(FEEDBACK_URL + "/" + createdFeedback.id())
+                .patch(createdFeedback.id())
                 .then()
                 .statusCode(403);
     }
@@ -189,14 +215,14 @@ class FeedbackResourceTest {
                 null
         );
 
-        // Update endpoint requires authentication, so 403 Forbidden is returned before checking if feedback exists
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(updateCommand)
                 .when()
-                .patch(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
+                .patch( INVALID_FEEDBACK_ID)
                 .then()
-                .statusCode(403);
+                .statusCode(404);
     }
 
     // ===== DELETE FEEDBACK TESTS =====
@@ -216,21 +242,26 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         // Delete it
         given()
-                .when().delete(FEEDBACK_URL + "/" + createdFeedback.id())
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .delete(createdFeedback.id())
                 .then()
                 .statusCode(204);
 
         // Verify it's deleted
         given()
-                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( createdFeedback.id())
                 .then()
                 .statusCode(404);
     }
@@ -239,7 +270,9 @@ class FeedbackResourceTest {
     @DisplayName("testDeleteFeedback_NotFound - Returns 404 for non-existent feedback")
     void testDeleteFeedback_NotFound() {
         given()
-                .when().delete(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID)
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .delete(INVALID_FEEDBACK_ID)
                 .then()
                 .statusCode(404);
     }
@@ -261,15 +294,18 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         // Archive it
         var response = given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post( createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -283,8 +319,9 @@ class FeedbackResourceTest {
     void testArchiveFeedback_NotFound() {
         given()
                 .accept("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .contentType("application/json")
-                .when().post(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID+"/archive")
+                .when().post(INVALID_FEEDBACK_ID+"/archive")
                 .then()
                 .statusCode(404);
     }
@@ -304,8 +341,9 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -314,9 +352,10 @@ class FeedbackResourceTest {
 
         var archivedFeedback = given()
                 .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .accept("application/json")
                 .contentType("application/json")
-                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .post(createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -325,7 +364,9 @@ class FeedbackResourceTest {
 
         // Verify by fetching again
         var fetchedFeedback = given()
-                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( createdFeedback.id())
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -350,21 +391,26 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         // Archive it first
         given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post( createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200);
 
         // Reopen it
         var response = given()
-                .when().post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post( createdFeedback.id() + "/reopen")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -400,25 +446,30 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         // Archive it first
         given()
-                .when().accept("application/json")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .accept("application/json")
                 .contentType("application/json")
-                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/archive")
+                .post( createdFeedback.id() + "/archive")
                 .then()
                 .statusCode(200);
 
         // Reopen and verify
         var reopenedFeedback = given()
-                .when().accept("application/json")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .accept("application/json")
                 .contentType("application/json")
-                .post(FEEDBACK_URL + "/" + createdFeedback.id() + "/reopen")
+                .post( createdFeedback.id() + "/reopen")
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -444,15 +495,18 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         // Retrieve comments (should be empty initially)
         var response = given()
-                .when().get(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get(createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(200)
                 .extract().body().as(CommentResponse[].class);
@@ -477,13 +531,15 @@ class FeedbackResourceTest {
         var createdFeedback = given()
                 .contentType("application/json")
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
 
         var comments = given()
-                .when().get(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .when().get( createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(200)
                 .extract().body().as(CommentResponse[].class);
@@ -495,7 +551,9 @@ class FeedbackResourceTest {
     @DisplayName("testGetComments_FeedbackNotFound - Returns 404 for invalid feedback ID")
     void testGetComments_FeedbackNotFound() {
         given()
-                .when().get(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID + "/comments")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( INVALID_FEEDBACK_ID + "/comments")
                 .then()
                 .statusCode(404);
     }
@@ -516,7 +574,9 @@ class FeedbackResourceTest {
         var createdFeedback = given()
                 .contentType("application/json")
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -526,8 +586,9 @@ class FeedbackResourceTest {
 
         var response = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(commentRequest)
-                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .when().put(createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(201)
                 .extract().body().as(CommentResponse.class);
@@ -552,8 +613,9 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -565,14 +627,17 @@ class FeedbackResourceTest {
 
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(commentRequest)
-                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .when().put(createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(201);
 
         // Verify count increased
         var updatedFeedback = given()
-                .when().get(FEEDBACK_URL + "/" + createdFeedback.id())
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get(createdFeedback.id())
                 .then()
                 .statusCode(200)
                 .extract().body().as(FeedbackResponse.class);
@@ -587,8 +652,9 @@ class FeedbackResourceTest {
 
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(commentRequest)
-                .when().put(FEEDBACK_URL + "/" + INVALID_FEEDBACK_ID + "/comments")
+                .when().put(INVALID_FEEDBACK_ID + "/comments")
                 .then()
                 .statusCode(404);
     }
@@ -608,8 +674,9 @@ class FeedbackResourceTest {
 
         var createdFeedback = given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -618,8 +685,9 @@ class FeedbackResourceTest {
 
         given()
                 .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(emptyCommentRequest)
-                .when().put(FEEDBACK_URL + "/" + createdFeedback.id() + "/comments")
+                .when().put(createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(400);
     }
@@ -631,8 +699,9 @@ class FeedbackResourceTest {
     void testListAll_WithPagination() {
         var response = given()
 .queryParam("page", 1)
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .queryParam("pageSize", 5)
-                .when().get(FEEDBACK_URL)
+                .when().get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);
@@ -646,8 +715,9 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_SortByOldest - Test sortBy=oldest parameter")
     void testListAll_SortByOldest() {
         var response = given()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
 .queryParam("sortBy", "oldest")
-                .when().get(FEEDBACK_URL)
+                .when().get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);
@@ -660,8 +730,9 @@ class FeedbackResourceTest {
     @DisplayName("testListAll_SortByNewest - Test sortBy=newest (default)")
     void testListAll_SortByNewest() {
         var response = given()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
 .queryParam("sortBy", "newest")
-                .when().get(FEEDBACK_URL)
+                .when().get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);
@@ -675,9 +746,11 @@ class FeedbackResourceTest {
     void testListAll_InvalidPageNumber() {
         var response = given()
 .accept("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .contentType("application/json")
                 .queryParam("page", -1)
-                .when().get(FEEDBACK_URL)
+                .when()
+                .get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);
@@ -692,9 +765,11 @@ class FeedbackResourceTest {
     void testListAll_ExcessivePageSize() {
         var response = given()
 .accept("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .contentType("application/json")
                 .queryParam("pageSize", 500)
-                .when().get(FEEDBACK_URL)
+                .when()
+                .get()
                 .then()
                 .statusCode(200)
                 .extract().body().as(PaginatedFeedbackResponse.class);

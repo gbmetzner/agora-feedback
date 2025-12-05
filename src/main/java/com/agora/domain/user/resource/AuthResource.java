@@ -77,14 +77,4 @@ public class AuthResource {
         return Response.temporaryRedirect(URI.create(frontendUrl)).build();
     }
 
-    @Inject
-    JsonWebToken jwt;
-
-    @GET
-    @RolesAllowed("user")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String admin() {
-        return "Access for subject " + jwt.getSubject() + " is granted";
-    }
-
 }

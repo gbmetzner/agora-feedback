@@ -1,9 +1,13 @@
 package com.agora.domain.user.infrastructure.security;
 
+import com.agora.domain.feedback.common.IdHelper;
+import com.agora.domain.user.model.User;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -14,42 +18,28 @@ public class JwtService {
 
     private static final long TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
     private static final String ISSUER = "agora.feedback";
+    private static final String SUBJECT = "user";
 
     /**
      * Generate JWT token for authenticated user
      */
-    public String generateToken(String userId, String username, String email) {
+    public String generateToken(User user) {
         Instant now = Instant.now();
         Instant expiration = now.plusSeconds(TOKEN_EXPIRY_SECONDS);
 
-        return Jwt
-                .issuer(ISSUER)
-                .subject("user")
-                .upn(email)
-                .claim("sub", userId)
-                .claim("username", username)
-                .claim("email", email)
+        Set<String> roles = new HashSet<>();
+        roles.add(user.getRole().name());
+
+        return Jwt.issuer(ISSUER)
+                .upn(user.getEmail())
+                .groups(user.getRole().name())
+                .subject(SUBJECT)
+                .claim("sub", IdHelper.toString(user.getId()))
+                .claim("email", user.getEmail())
+                .claim("roles", roles)
                 .issuedAt(now)
                 .expiresAt(expiration)
                 .sign();
     }
 
-    /**
-     * Generate token with custom expiration
-     */
-    public String generateToken(String userId, String username, String email, Duration expiration) {
-        Instant now = Instant.now();
-        Instant expirationTime = now.plus(expiration);
-
-        return Jwt
-                .issuer(ISSUER)
-                .subject("user")
-                .upn(email)
-                .claim("sub", userId)
-                .claim("username", username)
-                .claim("email", email)
-                .issuedAt(now)
-                .expiresAt(expirationTime)
-                .sign();
-    }
 }

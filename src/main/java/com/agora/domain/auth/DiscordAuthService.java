@@ -112,11 +112,7 @@ public class DiscordAuthService {
      * Step 4: Generate internal JWT
      */
     private AuthResponse generateAuthResponse(User user) {
-        String jwt = jwtService.generateToken(
-                IdHelper.toString(user.getId()),
-                user.username,
-                user.email
-        );
+        String jwt = jwtService.generateToken(user);
 
         AuthResponse response = new AuthResponse();
         response.token = jwt;

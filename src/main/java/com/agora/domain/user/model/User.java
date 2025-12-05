@@ -62,4 +62,5 @@ public class User extends PanacheEntityBase {
         updatedAt = LocalDateTime.now();
     }
 
+
 }

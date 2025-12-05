@@ -28,7 +28,6 @@ dependencies {
     implementation("io.quarkus:quarkus-hibernate-validator")
     implementation("io.hypersistence:hypersistence-utils-hibernate-71:3.12.0")
 
-    implementation("io.quarkus:quarkus-oidc")
     implementation("io.quarkus:quarkus-smallrye-jwt")
     implementation("io.quarkus:quarkus-smallrye-jwt-build")
 

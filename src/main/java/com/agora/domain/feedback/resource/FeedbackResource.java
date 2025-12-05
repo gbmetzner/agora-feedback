@@ -28,6 +28,7 @@ import org.jboss.logging.Logger;
 
 @Path("/api/v1/feedback")
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
+
 public class FeedbackResource {
 
     private static final Logger LOGGER = Logger.getLogger(FeedbackResource.class);
@@ -171,7 +172,7 @@ public class FeedbackResource {
         }
 
         // Extract current user ID from JWT token
-        Long currentUserId = Long.parseLong(jwt.getSubject());
+        Long currentUserId = IdHelper.toLong(jwt.getSubject());
 
         FeedbackResponse response = feedbackApplicationService.updateFeedback(
             IdHelper.toLong(id),

@@ -3,7 +3,12 @@ package com.agora.domain.feedback.integration;
 import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
+import com.agora.domain.user.infrastructure.security.JwtService;
+import com.agora.domain.user.model.repository.UserRepository;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,22 +26,36 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("Feedback Workflow Integration Tests")
 class FeedbackWorkflowIntegrationTest {
 
-    private static final String FEEDBACK_URL = "/api/v1/feedback";
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+
+    @Inject
+    UserRepository userRepository;
+    private String AUTHORIZATION_TOKEN = "Bearer ";
+    private final JwtService jwtService = new JwtService();
+
+    @BeforeEach
+    public void beforeEach() {
+        RestAssured.basePath = "/api/v1/feedback";
+        var user = userRepository.find("id",117457749108987388L).firstResult();
+        AUTHORIZATION_TOKEN += jwtService.generateToken(user);
+    }
 
     @Test
     @DisplayName("testCompleteWorkflow_CreateCommentArchive - Full feedback lifecycle")
     void testCompleteWorkflow_CreateCommentArchive() {
         // Step 1: Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Test Feedback Title",
-            "Test feedback description content",
-            null, null, null, null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Test Feedback Title")
+                .description("Test feedback description content")
+                .build();
 
-        FeedbackResponse created = given()
+        var created = given()
             .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
             .body(command)
-            .when().post(FEEDBACK_URL)
+            .when().post()
             .then()
             .statusCode(201)
             .extract().body().as(FeedbackResponse.class);
@@ -51,14 +70,17 @@ class FeedbackWorkflowIntegrationTest {
 
         given()
             .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
             .body(commentRequest)
-            .when().put(FEEDBACK_URL + "/{id}/comments", feedbackId)
+            .when().put( "/{id}/comments", feedbackId)
             .then()
             .statusCode(201);
 
         // Step 3: Archive the feedback
         FeedbackResponse archived = given()
-            .when().post(FEEDBACK_URL + "/{id}/archive", feedbackId)
+            .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post( "/{id}/archive", feedbackId)
             .then()
             .statusCode(200)
             .extract().body().as(FeedbackResponse.class);
@@ -67,7 +89,9 @@ class FeedbackWorkflowIntegrationTest {
 
         // Step 4: Reopen it
         FeedbackResponse reopened = given()
-            .when().post(FEEDBACK_URL + "/{id}/reopen", feedbackId)
+            .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .post( "/{id}/reopen", feedbackId)
             .then()
             .statusCode(200)
             .extract().body().as(FeedbackResponse.class);
@@ -88,7 +112,8 @@ class FeedbackWorkflowIntegrationTest {
         FeedbackResponse created = given()
             .contentType("application/json")
             .body(command)
-            .when().post(FEEDBACK_URL)
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+            .when().post()
             .then()
             .statusCode(201)
             .extract().body().as(FeedbackResponse.class);
@@ -97,13 +122,17 @@ class FeedbackWorkflowIntegrationTest {
 
         // Step 2: Delete it
         given()
-            .when().delete(FEEDBACK_URL + "/{id}", feedbackId)
+            .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .delete( "/{id}", feedbackId)
             .then()
             .statusCode(204);
 
         // Step 3: Verify it's gone
         given()
-            .when().get(FEEDBACK_URL + "/{id}", feedbackId)
+            .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( "/{id}", feedbackId)
             .then()
             .statusCode(404);
     }
@@ -120,8 +149,9 @@ class FeedbackWorkflowIntegrationTest {
 
         FeedbackResponse feedback = given()
             .contentType("application/json")
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
             .body(command)
-            .when().post(FEEDBACK_URL)
+            .when().post()
             .then()
             .statusCode(201)
             .extract().body().as(FeedbackResponse.class);
@@ -136,15 +166,18 @@ class FeedbackWorkflowIntegrationTest {
 
             given()
                 .contentType("application/json")
+                    .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(commentRequest)
-                .when().put(FEEDBACK_URL + "/{id}/comments", feedbackId)
+                .when().put( "/{id}/comments", feedbackId)
                 .then()
                 .statusCode(201);
         }
 
         // Step 3: Retrieve and verify comments exist
         String comments = given()
-            .when().get(FEEDBACK_URL + "/{id}/comments", feedbackId)
+            .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( "/{id}/comments", feedbackId)
             .then()
             .statusCode(200)
             .extract().body().asString();
@@ -167,8 +200,9 @@ class FeedbackWorkflowIntegrationTest {
 
             FeedbackResponse response = given()
                 .contentType("application/json")
+                    .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
                 .body(command)
-                .when().post(FEEDBACK_URL)
+                .when().post()
                 .then()
                 .statusCode(201)
                 .extract().body().as(FeedbackResponse.class);
@@ -179,7 +213,8 @@ class FeedbackWorkflowIntegrationTest {
         // Verify all were created
         for (String id : ids) {
             given()
-                .when().get(FEEDBACK_URL + "/{id}", id)
+                    .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .when().get( "/{id}", id)
                 .then()
                 .statusCode(200);
         }

@@ -4,7 +4,9 @@ import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
+@Builder
 public record UpdateFeedbackCommand(
         @NotBlank(message = "Title cannot be blank")
         @Size(min = 3, max = 255, message = "Title must be between 3 and 255 characters")

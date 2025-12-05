@@ -519,14 +519,10 @@ class FeedbackResourceTest {
     @DisplayName("testGetComments_EmptyList - Returns empty array for feedback with no comments")
     void testGetComments_EmptyList() {
         // Create feedback without comments
-        var command = new CreateFeedbackCommand(
-                "No Comments Feedback",
-                "This feedback intentionally has no comments for testing empty list",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("No Comments Feedback")
+                .description("This feedback intentionally has no comments for testing empty list")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -539,7 +535,9 @@ class FeedbackResourceTest {
                 .extract().body().as(FeedbackResponse.class);
 
         var comments = given()
-                .when().get( createdFeedback.id() + "/comments")
+                .when()
+                .header(AUTHORIZATION_HEADER, AUTHORIZATION_TOKEN)
+                .get( createdFeedback.id() + "/comments")
                 .then()
                 .statusCode(200)
                 .extract().body().as(CommentResponse[].class);

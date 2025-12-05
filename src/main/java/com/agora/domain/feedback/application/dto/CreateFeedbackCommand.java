@@ -4,6 +4,7 @@ import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -18,6 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
     description = "Request to create a new feedback item",
     examples = "{\"title\": \"Dark mode support needed\", \"description\": \"Users are requesting a dark mode option for better usability in low-light environments. This would reduce eye strain and improve overall user experience.\", \"categoryId\": 117457749108987394, \"authorId\": 117457749108987388, \"sentiment\": \"POSITIVE\", \"tags\": \"ui,accessibility,enhancement\"}"
 )
+@Builder
 public record CreateFeedbackCommand(
         @Schema(description = "Feedback title", examples = "Dark mode support needed")
         @NotBlank(message = "Title cannot be blank")

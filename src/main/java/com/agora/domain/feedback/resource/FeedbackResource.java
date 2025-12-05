@@ -28,7 +28,7 @@ import org.jboss.logging.Logger;
 
 @Path("/api/v1/feedback")
 @Tag(name = "Feedback", description = "Feedback submission, retrieval, and management")
-
+@Authenticated
 public class FeedbackResource {
 
     private static final Logger LOGGER = Logger.getLogger(FeedbackResource.class);

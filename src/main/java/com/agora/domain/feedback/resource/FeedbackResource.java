@@ -5,13 +5,13 @@ import com.agora.domain.feedback.application.dto.CreateFeedbackCommand;
 import com.agora.domain.feedback.application.dto.UpdateFeedbackCommand;
 import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.UnauthorizedException;
+import com.agora.domain.feedback.model.dto.CategoryResponse;
 import com.agora.domain.feedback.model.dto.CommentResponse;
 import com.agora.domain.feedback.model.dto.CreateCommentRequest;
 import com.agora.domain.feedback.model.dto.FeedbackResponse;
 import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
 import com.agora.domain.feedback.model.dto.VoteRequest;
 import io.quarkus.security.Authenticated;
-import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -402,5 +402,27 @@ public class FeedbackResource {
         );
         return Response.ok(response).build();
     }
+
+    @GET
+    @Path("/categories")
+    @Operation(
+            summary = "List all feedback categories",
+            description = "Retrieve all available feedback categories"
+    )
+    @APIResponses({
+            @APIResponse(
+                    responseCode = "200",
+                    description = "List of all feedback categories",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = CategoryResponse.class)
+                    )
+            )
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findAllCategories() {
+        return Response.ok(feedbackApplicationService.findAllCategories()).build();
+    }
+
 
 }

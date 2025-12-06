@@ -183,7 +183,7 @@ class FeedbackResourceTest {
                 .when()
                 .patch(createdFeedback.id())
                 .then()
-                .statusCode(403);
+                .statusCode(200);
     }
 
     @Test

@@ -1,4 +1,7 @@
 package com.agora.domain.feedback.model.dto;
 
-public class CategoryResponse {
+import lombok.Builder;
+
+@Builder
+public record CategoryResponse(String id, String name) {
 }

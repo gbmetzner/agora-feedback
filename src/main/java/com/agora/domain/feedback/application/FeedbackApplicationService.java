@@ -6,11 +6,7 @@ import com.agora.domain.feedback.common.IdHelper;
 import com.agora.domain.feedback.exception.CategoryNotFoundException;
 import com.agora.domain.feedback.exception.FeedbackNotFoundException;
 import com.agora.domain.feedback.exception.UnauthorizedException;
-import com.agora.domain.feedback.model.dto.CommentAuthorResponse;
-import com.agora.domain.feedback.model.dto.CommentResponse;
-import com.agora.domain.feedback.model.dto.CreateCommentRequest;
-import com.agora.domain.feedback.model.dto.FeedbackResponse;
-import com.agora.domain.feedback.model.dto.PaginatedFeedbackResponse;
+import com.agora.domain.feedback.model.dto.*;
 import com.agora.domain.feedback.model.entity.Comment;
 import com.agora.domain.feedback.model.entity.Feedback;
 import com.agora.domain.feedback.model.entity.FeedbackCategory;
@@ -476,7 +472,7 @@ public class FeedbackApplicationService {
             throw new IllegalArgumentException("Comment not found: " + commentId);
         }
 
-        // Verify comment belongs to the feedback
+        // Verify if a comment belongs to the feedback
         if (!comment.getFeedback().getId().equals(feedbackId)) {
             throw new IllegalArgumentException("Comment does not belong to this feedback");
         }
@@ -492,5 +488,9 @@ public class FeedbackApplicationService {
 
         commentRepository.persist(comment);
         return toCommentResponse(comment);
+    }
+
+    public List<CategoryResponse> findAllCategories() {
+        return categoryRepository.findAll().stream().map( c -> new CategoryResponse(IdHelper.toString(c.getId()), c.getName())).toList();
     }
 }

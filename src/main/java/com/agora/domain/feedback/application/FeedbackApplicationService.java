@@ -10,7 +10,6 @@ import com.agora.domain.feedback.model.dto.*;
 import com.agora.domain.feedback.model.entity.Comment;
 import com.agora.domain.feedback.model.entity.Feedback;
 import com.agora.domain.feedback.model.entity.FeedbackCategory;
-import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import com.agora.domain.feedback.model.VoteDirection;
 import com.agora.domain.feedback.model.repository.CategoryRepository;
 import com.agora.domain.feedback.model.repository.CommentRepository;
@@ -18,7 +17,6 @@ import com.agora.domain.feedback.model.repository.FeedbackRepository;
 import com.agora.domain.user.exception.UserNotFoundException;
 import com.agora.domain.user.model.User;
 import com.agora.domain.user.model.repository.UserRepository;
-import io.hypersistence.tsid.TSID;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -67,35 +65,35 @@ public class FeedbackApplicationService {
      * @throws UserNotFoundException if specified author does not exist
      */
     @Transactional
-    public FeedbackResponse createFeedback(@Valid @NotNull CreateFeedbackCommand command) {
+    public FeedbackResponse createFeedback(@Valid @NotNull CreateFeedbackCommand command, @NotNull String userId) {
         Feedback feedback = new Feedback(
                 command.title(),
                 command.description()
         );
 
         if (command.categoryId() != null) {
-            FeedbackCategory category = categoryRepository.findById(command.categoryId());
+            FeedbackCategory category = categoryRepository.findById(IdHelper.toLong(command.categoryId()));
             if (category == null) {
-                throw new CategoryNotFoundException(command.categoryId());
+                throw new CategoryNotFoundException(IdHelper.toLong(command.categoryId()));
             }
             feedback.setCategory(category);
         }
 
-        if (command.authorId() != null) {
-            User author = userRepository.findById(command.authorId());
+
+            User author = userRepository.findById(IdHelper.toLong(userId));
             if (author == null) {
-                throw new UserNotFoundException(command.authorId());
+                throw new UserNotFoundException(IdHelper.toLong(userId));
             }
             feedback.setAuthor(author);
-        }
 
-        if (command.sentiment() != null) {
-            feedback.setSentiment(command.sentiment());
-        }
 
-        if (command.tags() != null) {
-            feedback.setTags(command.tags());
-        }
+//        if (command.sentiment() != null) {
+//            feedback.setSentiment(command.sentiment());
+//        }
+
+//        if (command.tags() != null) {
+//            feedback.setTags(command.tags());
+//        }
 
         feedbackRepository.persist(feedback);
         return toResponse(feedback);

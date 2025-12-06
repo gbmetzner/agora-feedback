@@ -103,11 +103,10 @@ class FeedbackWorkflowIntegrationTest {
     @DisplayName("testDeleteWorkflow_CreateAndDelete - Delete feedback")
     void testDeleteWorkflow_CreateAndDelete() {
         // Step 1: Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "To Be Deleted",
-            "This will be deleted",
-            null, null, null, null
-        );
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("To Be Deleted")
+            .description("This will be deleted")
+            .build();
 
         FeedbackResponse created = given()
             .contentType("application/json")
@@ -141,11 +140,10 @@ class FeedbackWorkflowIntegrationTest {
     @DisplayName("testCommentWorkflow_AddMultipleComments - Multiple comments")
     void testCommentWorkflow_AddMultipleComments() {
         // Step 1: Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Discussion Topic",
-            "Let's discuss this",
-            null, null, null, null
-        );
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Discussion Topic")
+            .description("Let's discuss this")
+            .build();
 
         FeedbackResponse feedback = given()
             .contentType("application/json")
@@ -192,11 +190,10 @@ class FeedbackWorkflowIntegrationTest {
         String[] ids = new String[5];
 
         for (int i = 0; i < 5; i++) {
-            CreateFeedbackCommand command = new CreateFeedbackCommand(
-                "Item " + (i + 1),
-                "Description " + (i + 1),
-                null, null, null, null
-            );
+            CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+                .title("Item " + (i + 1))
+                .description("Description " + (i + 1))
+                .build();
 
             FeedbackResponse response = given()
                 .contentType("application/json")

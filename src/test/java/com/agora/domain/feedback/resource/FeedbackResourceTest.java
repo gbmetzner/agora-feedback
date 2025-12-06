@@ -85,14 +85,10 @@ class FeedbackResourceTest {
     @Test
     @DisplayName("testCreateFeedback_Success - Valid feedback creation")
     void testCreateFeedback_Success() {
-        var command = new CreateFeedbackCommand(
-                "Test Feedback Title",
-                "This is a comprehensive test feedback content for testing purposes",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Test Feedback Title")
+                .description("This is a comprehensive test feedback content for testing purposes")
+                .build();
 
         var response = given()
                 .contentType("application/json")
@@ -116,14 +112,10 @@ class FeedbackResourceTest {
     @Test
     @DisplayName("testCreateFeedbackWithBlankTitle - Validation error for empty title")
     void testCreateFeedbackWithBlankTitle() {
-        var command = new CreateFeedbackCommand(
-                "",
-                "This is a test feedback with blank title",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("")
+                .description("This is a test feedback with blank title")
+                .build();
 
         given()
                 .contentType("application/json")
@@ -138,14 +130,10 @@ class FeedbackResourceTest {
     @Test
     @DisplayName("testCreateFeedbackWithShortDescription - Validation error for short description")
     void testCreateFeedbackWithShortDescription() {
-        var command = new CreateFeedbackCommand(
-                "Valid Title",
-                "Short",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Valid Title")
+                .description("Short")
+                .build();
 
         given()
                 .contentType("application/json")
@@ -162,14 +150,10 @@ class FeedbackResourceTest {
     @DisplayName("testUpdateFeedback_Success - Update existing feedback")
     void testUpdateFeedback_Success() {
         // Create feedback
-        var createCommand = new CreateFeedbackCommand(
-                "Original Title",
-                "This is original feedback content that will be updated",
-                null,
-                null,
-                null,
-                null
-        );
+        var createCommand = CreateFeedbackCommand.builder()
+                .title("Original Title")
+                .description("This is original feedback content that will be updated")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -231,14 +215,10 @@ class FeedbackResourceTest {
     @DisplayName("testDeleteFeedback_Success - Delete existing feedback")
     void testDeleteFeedback_Success() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "To Delete",
-                "This feedback will be deleted soon to verify deletion",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("To Delete")
+                .description("This feedback will be deleted soon to verify deletion")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -283,14 +263,10 @@ class FeedbackResourceTest {
     @DisplayName("testArchiveFeedback_Success - Archive existing feedback")
     void testArchiveFeedback_Success() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "To Archive",
-                "This feedback will be archived to test the archive functionality",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("To Archive")
+                .description("This feedback will be archived to test the archive functionality")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -330,14 +306,10 @@ class FeedbackResourceTest {
     @DisplayName("testArchiveFeedback_VerifyArchivedFlag - Verify archived flag is set")
     void testArchiveFeedback_VerifyArchivedFlag() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Verify Archive Flag",
-                "Testing that archived flag is properly set when archiving feedback",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Verify Archive Flag")
+                .description("Testing that archived flag is properly set when archiving feedback")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -380,14 +352,10 @@ class FeedbackResourceTest {
     @DisplayName("testReopenFeedback_Success - Reopen archived feedback")
     void testReopenFeedback_Success() {
         // Create and archive feedback
-        var command = new CreateFeedbackCommand(
-                "To Reopen",
-                "This feedback will be archived then reopened for testing",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("To Reopen")
+                .description("This feedback will be archived then reopened for testing")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -435,14 +403,10 @@ class FeedbackResourceTest {
     @DisplayName("testReopenFeedback_VerifyStatus - Verify status is changed to PENDING")
     void testReopenFeedback_VerifyStatus() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Verify Reopen Status",
-                "Testing that reopen changes status back to PENDING when reopening",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Verify Reopen Status")
+                .description("Testing that reopen changes status back to PENDING when reopening")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -484,14 +448,10 @@ class FeedbackResourceTest {
     @DisplayName("testGetComments_Success - Retrieve comments for feedback")
     void testGetComments_Success() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Feedback for Comments",
-                "This feedback will have comments added to test comment retrieval",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Feedback for Comments")
+                .description("This feedback will have comments added to test comment retrieval")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -560,14 +520,10 @@ class FeedbackResourceTest {
     @DisplayName("testAddComment_Success - Add comment to feedback")
     void testAddComment_Success() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Feedback for Comment",
-                "This feedback will have a comment added to test comment creation",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Feedback for Comment")
+                .description("This feedback will have a comment added to test comment creation")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -600,14 +556,10 @@ class FeedbackResourceTest {
     @DisplayName("testAddComment_VerifyCommentCount - Verify feedback comment count incremented")
     void testAddComment_VerifyCommentCount() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Feedback for Count Test",
-                "This feedback will have a comment added to verify count increment",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Feedback for Count Test")
+                .description("This feedback will have a comment added to verify count increment")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")
@@ -661,14 +613,10 @@ class FeedbackResourceTest {
     @DisplayName("testAddComment_BlankText - Validation error for empty comment text")
     void testAddComment_BlankText() {
         // Create feedback
-        var command = new CreateFeedbackCommand(
-                "Feedback for Blank Comment",
-                "This feedback will attempt to have an empty comment added",
-                null,
-                null,
-                null,
-                null
-        );
+        var command = CreateFeedbackCommand.builder()
+                .title("Feedback for Blank Comment")
+                .description("This feedback will attempt to have an empty comment added")
+                .build();
 
         var createdFeedback = given()
                 .contentType("application/json")

@@ -35,12 +35,11 @@ class FeedbackVotingTest {
     @DisplayName("testUpvoteFeedback - Upvoting increments upvotes counter")
     void testUpvoteFeedback() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Feature Request",
-            "Please add dark mode support to the application",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Feature Request")
+            .description("Please add dark mode support to the application")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
 
         // Upvote the feedback
         FeedbackResponse voted = feedbackService.voteFeedback(
@@ -57,12 +56,11 @@ class FeedbackVotingTest {
     @DisplayName("testDownvoteFeedback - Downvoting increments downvotes counter")
     void testDownvoteFeedback() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Bug Report",
-            "Application crashes when loading large datasets",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Bug Report")
+            .description("Application crashes when loading large datasets")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
 
         // Downvote the feedback
         FeedbackResponse voted = feedbackService.voteFeedback(
@@ -78,12 +76,11 @@ class FeedbackVotingTest {
     @DisplayName("testMultipleUpvotes - Multiple upvotes increment counter correctly")
     void testMultipleUpvotes() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Popular Feature",
-            "Users are requesting this feature frequently",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Popular Feature")
+            .description("Users are requesting this feature frequently")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
         Long feedbackId = IdHelper.toLong(created.id());
 
         // Upvote multiple times
@@ -101,12 +98,11 @@ class FeedbackVotingTest {
     @DisplayName("testRemoveVote - Removing vote resets both counters")
     void testRemoveVote() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Vote Test",
-            "Testing vote removal functionality here",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Vote Test")
+            .description("Testing vote removal functionality here")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
         Long feedbackId = IdHelper.toLong(created.id());
 
         // Upvote
@@ -122,12 +118,11 @@ class FeedbackVotingTest {
     @DisplayName("testUpvoteDownvoteCycle - Cycle between up and down votes")
     void testUpvoteDownvoteCycle() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Cycle Test",
-            "Testing vote direction cycling functionality",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Cycle Test")
+            .description("Testing vote direction cycling functionality")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
         Long feedbackId = IdHelper.toLong(created.id());
 
         // Upvote
@@ -147,12 +142,11 @@ class FeedbackVotingTest {
     @DisplayName("testInvalidVoteDirection - Invalid direction throws exception")
     void testInvalidVoteDirection() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Error Test",
-            "Testing invalid vote direction handling",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Error Test")
+            .description("Testing invalid vote direction handling")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
 
         // Try invalid direction
         assertThatThrownBy(() ->
@@ -176,12 +170,11 @@ class FeedbackVotingTest {
     @DisplayName("testVoteCountsPersisted - Vote counts are persisted to database")
     void testVoteCountsPersisted() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Persistence Test",
-            "Testing that vote counts persist in database",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Persistence Test")
+            .description("Testing that vote counts persist in database")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
         Long feedbackId = IdHelper.toLong(created.id());
 
         // Vote
@@ -200,12 +193,11 @@ class FeedbackVotingTest {
     @DisplayName("testVoteCounterMinimum - Vote counter doesn't go below zero")
     void testVoteCounterMinimum() {
         // Create feedback (starts with 0 upvotes)
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Minimum Test",
-            "Testing vote counter minimum boundary",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Minimum Test")
+            .description("Testing vote counter minimum boundary")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
         Long feedbackId = IdHelper.toLong(created.id());
 
         // Try to remove upvote when counter is 0
@@ -219,12 +211,11 @@ class FeedbackVotingTest {
     @DisplayName("testNullVoteDirection - Null direction throws exception")
     void testNullVoteDirection() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Null Test",
-            "Testing null vote direction handling",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Null Test")
+            .description("Testing null vote direction handling")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
 
         // Try null direction
         assertThatThrownBy(() ->
@@ -237,12 +228,11 @@ class FeedbackVotingTest {
     @DisplayName("testEmptyVoteDirection - Empty direction throws exception")
     void testEmptyVoteDirection() {
         // Create feedback
-        CreateFeedbackCommand command = new CreateFeedbackCommand(
-            "Empty Test",
-            "Testing empty vote direction handling",
-            null, null, null, null
-        );
-        FeedbackResponse created = feedbackService.createFeedback(command);
+        CreateFeedbackCommand command = CreateFeedbackCommand.builder()
+            .title("Empty Test")
+            .description("Testing empty vote direction handling")
+            .build();
+        FeedbackResponse created = feedbackService.createFeedback(command, IdHelper.toString(117457749108987388L));
 
         // Try empty direction
         assertThatThrownBy(() ->

@@ -5,10 +5,8 @@ import com.agora.domain.user.model.User;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Instant;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Service for generating internal JWT tokens

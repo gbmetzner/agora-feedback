@@ -1,8 +1,6 @@
 package com.agora.domain.feedback.application.dto;
 
-import com.agora.domain.feedback.model.entity.FeedbackStatus;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -32,15 +30,9 @@ public record CreateFeedbackCommand(
         String description,
 
         @Schema(description = "Category ID for feedback classification", examples = "117457749108987394")
-        Long categoryId,
-
-        @Schema(description = "Author/user ID who submitted the feedback", examples = "117457749108987388")
-        Long authorId,
-
-        @Schema(description = "Sentiment of the feedback", examples = "POSITIVE", enumeration = {"POSITIVE", "NEGATIVE", "NEUTRAL"})
-        String sentiment,
+        String categoryId,
 
         @Schema(description = "Comma-separated tags for categorization", examples = "ui,accessibility,enhancement")
-        String tags
+        String [] tags
 ) {
 }

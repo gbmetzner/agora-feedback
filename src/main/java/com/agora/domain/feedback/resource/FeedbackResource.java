@@ -127,7 +127,8 @@ public class FeedbackResource {
     public Response create(
             @Parameter(description = "Feedback creation data", required = true)
             CreateFeedbackCommand command) {
-        FeedbackResponse response = feedbackApplicationService.createFeedback(command);
+        var userId = jwt.getSubject();
+        FeedbackResponse response = feedbackApplicationService.createFeedback(command, userId);
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 

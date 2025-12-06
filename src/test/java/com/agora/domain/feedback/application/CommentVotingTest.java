@@ -66,12 +66,9 @@ class CommentVotingTest {
 
         // Create test feedback
         FeedbackResponse feedbackResponse = feedbackService.createFeedback(
-            new CreateFeedbackCommand(
-                "Comment Test Feedback",
-                "This feedback is for testing comment voting",
-                null, null, null, null
-            )
-        );
+            CreateFeedbackCommand.builder()
+                    .title("Comment Test Feedback")
+                    .description("This feedback is for testing comment voting").build(), IdHelper.toString(testUser.getId()));
         testFeedback = feedbackRepository.findById(IdHelper.toLong(feedbackResponse.id()));
 
         // Create test comment
@@ -211,11 +208,11 @@ class CommentVotingTest {
     void testVoteCommentNotBelongingToFeedback() {
         // Create another feedback
         FeedbackResponse otherFeedback = feedbackService.createFeedback(
-            new CreateFeedbackCommand(
-                "Other Feedback",
-                "This is a different feedback item",
-                null, null, null, null
-            )
+            CreateFeedbackCommand.builder()
+                .title("Other Feedback")
+                .description("This is a different feedback item")
+                .build(),
+            IdHelper.toString(testUser.getId())
         );
 
         // Try to vote on comment from first feedback using second feedback ID
